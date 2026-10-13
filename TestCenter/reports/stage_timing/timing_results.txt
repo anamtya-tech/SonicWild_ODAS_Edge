@@ -1,0 +1,8 @@
+ODAS_TIMING version=base_bcb8454 module=ssl calls=3095 total_ms=1853.318 avg_ms=0.598810
+ODAS_TIMING version=base_bcb8454 module=sst calls=3095 total_ms=43.931 avg_ms=0.014194
+ODAS_TIMING version=18a8a73 module=ssl calls=1752 total_ms=1678.198 avg_ms=0.957876
+ODAS_TIMING version=18a8a73 module=sst calls=1752 total_ms=28.261 avg_ms=0.016131
+ODAS_TIMING version=93a1b81 module=ssl calls=1830 total_ms=1683.985 avg_ms=0.920210
+ODAS_TIMING version=93a1b81 module=sst calls=1830 total_ms=148.680 avg_ms=0.081246
+ODAS_TIMING version=base_bcb8454 module=ssl calls=1267 total_ms=600.118 avg_ms=0.473653
+ODAS_TIMING version=base_bcb8454 module=sst calls=1267 total_ms=13.998 avg_ms=0.011048

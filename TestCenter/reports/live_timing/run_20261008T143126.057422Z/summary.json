@@ -1,0 +1,1559 @@
+{
+  "revision": "93a1b81",
+  "command": "~/chatak-odas_20261004_93a1b81/build/live_timing/bin/odaslive -c ~/ChatakGUI/config/sonicwild.cfg -rl",
+  "deadline_ms": 8.0,
+  "deadline_basis": "User-supplied; default 8 ms assumes hopSize=128 and sample rate=16000 Hz",
+  "window_start_ns": 37690930503459,
+  "window_end_ns": 37810930503459,
+  "window_seconds": 120.0,
+  "storage": {
+    "source": "/dev/mmcblk0p2",
+    "target": "/",
+    "fstype": "ext4"
+  },
+  "disk": "mmcblk0",
+  "interface": "wlan0",
+  "wifi_state": "Interface wlan0\n\tifindex 3\n\twdev 0x1\n\taddr <redacted-mac>\n\tssid <redacted-ssid>\n\ttype managed\n\twiphy 0\n\tchannel 1 (2412 MHz), width: 20 MHz, center1: 2412 MHz\n\ttxpower 31.00 dBm",
+  "warnings": [
+    "Live visualizer control activity and receiver render/arrival timing require external verification."
+  ],
+  "modules": {
+    "src_hops_process/thread-257840/0x55a14c50d0": {
+      "module": "src_hops_process",
+      "thread": "thread-257840",
+      "instance": "0x55a14c50d0",
+      "starts": 15000,
+      "unmatched_starts": 1,
+      "inter_frame": {
+        "count": 14999,
+        "mean_ms": 7.984026277885192,
+        "p95_ms": 0.152055,
+        "p99_ms": 249.005468,
+        "max_ms": 252.198686,
+        "over_deadline": 479,
+        "over_deadline_percent": 3.193546236415761
+      },
+      "scope_wall_time": {
+        "count": 14999,
+        "mean_ms": 7.9707302441496095,
+        "p95_ms": 0.096907,
+        "p99_ms": 248.94521,
+        "max_ms": 251.565688
+      },
+      "terminal_gap_ms": 45.44636
+    },
+    "mod_mapping_process/thread-257842/0x55a14c1600": {
+      "module": "mod_mapping_process",
+      "thread": "thread-257842",
+      "instance": "0x55a14c1600",
+      "starts": 15000,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 14999,
+        "mean_ms": 7.984051726315087,
+        "p95_ms": 0.786052,
+        "p99_ms": 248.575754,
+        "max_ms": 251.228671,
+        "over_deadline": 479,
+        "over_deadline_percent": 3.193546236415761
+      },
+      "scope_wall_time": {
+        "count": 15000,
+        "mean_ms": 0.008800793533333332,
+        "p95_ms": 0.017389,
+        "p99_ms": 0.037388,
+        "max_ms": 2.151529
+      },
+      "terminal_gap_ms": 45.012511
+    },
+    "mod_resample_process_push/thread-257844/0x55a15cf210": {
+      "module": "mod_resample_process_push",
+      "thread": "thread-257844",
+      "instance": "0x55a15cf210",
+      "starts": 15000,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 14999,
+        "mean_ms": 7.984086418561238,
+        "p95_ms": 1.136883,
+        "p99_ms": 246.8673,
+        "max_ms": 250.358167,
+        "over_deadline": 479,
+        "over_deadline_percent": 3.193546236415761
+      },
+      "scope_wall_time": {
+        "count": 15000,
+        "mean_ms": 0.06669217066666666,
+        "p95_ms": 0.136962,
+        "p99_ms": 0.609757,
+        "max_ms": 5.738883
+      },
+      "terminal_gap_ms": 44.416958
+    },
+    "mod_resample_process_pop/thread-257844/0x55a15cf210": {
+      "module": "mod_resample_process_pop",
+      "thread": "thread-257844",
+      "instance": "0x55a15cf210",
+      "starts": 15000,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 14999,
+        "mean_ms": 7.984080962664177,
+        "p95_ms": 1.19331,
+        "p99_ms": 246.951467,
+        "max_ms": 250.465093,
+        "over_deadline": 479,
+        "over_deadline_percent": 3.193546236415761
+      },
+      "scope_wall_time": {
+        "count": 15000,
+        "mean_ms": 0.010272780866666666,
+        "p95_ms": 0.016852,
+        "p99_ms": 0.039185,
+        "max_ms": 3.009769
+      },
+      "terminal_gap_ms": 44.377088
+    },
+    "mod_stft_process/thread-257846/0x55a15e48d0": {
+      "module": "mod_stft_process",
+      "thread": "thread-257846",
+      "instance": "0x55a15e48d0",
+      "starts": 15000,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 14999,
+        "mean_ms": 7.984117989665977,
+        "p95_ms": 1.792808,
+        "p99_ms": 246.126417,
+        "max_ms": 251.816073,
+        "over_deadline": 479,
+        "over_deadline_percent": 3.193546236415761
+      },
+      "scope_wall_time": {
+        "count": 15000,
+        "mean_ms": 0.041890204466666664,
+        "p95_ms": 0.08324,
+        "p99_ms": 0.245332,
+        "max_ms": 3.323617
+      },
+      "terminal_gap_ms": 43.698924
+    },
+    "mod_noise_process/thread-257848/0x55a16a2a60": {
+      "module": "mod_noise_process",
+      "thread": "thread-257848",
+      "instance": "0x55a16a2a60",
+      "starts": 15000,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 14999,
+        "mean_ms": 7.984223924528302,
+        "p95_ms": 2.153881,
+        "p99_ms": 245.091186,
+        "max_ms": 251.020007,
+        "over_deadline": 479,
+        "over_deadline_percent": 3.193546236415761
+      },
+      "scope_wall_time": {
+        "count": 15000,
+        "mean_ms": 0.05649976933333333,
+        "p95_ms": 0.095833,
+        "p99_ms": 0.327035,
+        "max_ms": 5.240477
+      },
+      "terminal_gap_ms": 41.342398
+    },
+    "mod_chatak_process/thread-257850/0x55a1b8c370": {
+      "module": "mod_chatak_process",
+      "thread": "thread-257850",
+      "instance": "0x55a1b8c370",
+      "starts": 15000,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 14999,
+        "mean_ms": 7.984669638442563,
+        "p95_ms": 2.428989,
+        "p99_ms": 240.652977,
+        "max_ms": 247.64261,
+        "over_deadline": 481,
+        "over_deadline_percent": 3.2068804586972464
+      },
+      "scope_wall_time": {
+        "count": 15000,
+        "mean_ms": 0.2196911396,
+        "p95_ms": 0.925015,
+        "p99_ms": 2.250975,
+        "max_ms": 9.942948
+      },
+      "terminal_gap_ms": 34.173451
+    },
+    "mod_ssl_process/thread-257852/0x55a14c23e0": {
+      "module": "mod_ssl_process",
+      "thread": "thread-257852",
+      "instance": "0x55a14c23e0",
+      "starts": 15016,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 15015,
+        "mean_ms": 7.990657735597736,
+        "p95_ms": 2.610452,
+        "p99_ms": 222.451001,
+        "max_ms": 227.586571,
+        "over_deadline": 480,
+        "over_deadline_percent": 3.196803196803197
+      },
+      "scope_wall_time": {
+        "count": 15016,
+        "mean_ms": 0.8958538282498668,
+        "p95_ms": 1.638344,
+        "p99_ms": 2.565083,
+        "max_ms": 6.318703
+      },
+      "terminal_gap_ms": 18.578599
+    },
+    "ssl_worker_wait/thread-257852/0x55a1bb2230": {
+      "module": "ssl_worker_wait",
+      "thread": "thread-257852",
+      "instance": "0x55a1bb2230",
+      "starts": 15017,
+      "unmatched_starts": 1,
+      "inter_frame": {
+        "count": 15016,
+        "mean_ms": 7.990174018646777,
+        "p95_ms": 2.646843,
+        "p99_ms": 222.572168,
+        "max_ms": 228.649857,
+        "over_deadline": 480,
+        "over_deadline_percent": 3.196590303676079
+      },
+      "scope_wall_time": {
+        "count": 15016,
+        "mean_ms": 7.034211579381993,
+        "p95_ms": 0.321609,
+        "p99_ms": 221.640182,
+        "max_ms": 226.888852
+      },
+      "terminal_gap_ms": 17.87738
+    },
+    "snk_pots_process/thread-257853/0x55a15d47d0": {
+      "module": "snk_pots_process",
+      "thread": "thread-257853",
+      "instance": "0x55a15d47d0",
+      "starts": 15017,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 15016,
+        "mean_ms": 7.990167196323921,
+        "p95_ms": 3.3641,
+        "p99_ms": 223.320912,
+        "max_ms": 231.276632,
+        "over_deadline": 481,
+        "over_deadline_percent": 3.2032498668087372
+      },
+      "scope_wall_time": {
+        "count": 15017,
+        "mean_ms": 0.10722251621495638,
+        "p95_ms": 0.284018,
+        "p99_ms": 0.655257,
+        "max_ms": 2.194882
+      },
+      "terminal_gap_ms": 17.788454
+    },
+    "snk_pots_process_interface_socket/thread-257853/0x55a15d47d0": {
+      "module": "snk_pots_process_interface_socket",
+      "thread": "thread-257853",
+      "instance": "0x55a15d47d0",
+      "starts": 15017,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 15016,
+        "mean_ms": 7.990163997269579,
+        "p95_ms": 3.377026,
+        "p99_ms": 223.33179,
+        "max_ms": 231.31041,
+        "over_deadline": 481,
+        "over_deadline_percent": 3.2032498668087372
+      },
+      "scope_wall_time": {
+        "count": 15017,
+        "mean_ms": 0.05627349890124525,
+        "p95_ms": 0.19537,
+        "p99_ms": 0.521831,
+        "max_ms": 2.131842
+      },
+      "terminal_gap_ms": 17.755232
+    },
+    "mod_sst_process/thread-257857/0x55a21140e0": {
+      "module": "mod_sst_process",
+      "thread": "thread-257857",
+      "instance": "0x55a21140e0",
+      "starts": 15017,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 15016,
+        "mean_ms": 7.990139677543953,
+        "p95_ms": 3.749336,
+        "p99_ms": 222.403926,
+        "max_ms": 231.25109,
+        "over_deadline": 603,
+        "over_deadline_percent": 4.015716568993074
+      },
+      "scope_wall_time": {
+        "count": 15017,
+        "mean_ms": 0.36404883185722847,
+        "p95_ms": 0.183092,
+        "p99_ms": 0.860424,
+        "max_ms": 58.837337
+      },
+      "terminal_gap_ms": 17.373234
+    },
+    "snk_tracks_process/thread-257858/0x55a21a07a0": {
+      "module": "snk_tracks_process",
+      "thread": "thread-257858",
+      "instance": "0x55a21a07a0",
+      "starts": 15021,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 15020,
+        "mean_ms": 7.988162355259654,
+        "p95_ms": 3.914318,
+        "p99_ms": 223.268028,
+        "max_ms": 254.726589,
+        "over_deadline": 613,
+        "over_deadline_percent": 4.081225033288948
+      },
+      "scope_wall_time": {
+        "count": 15021,
+        "mean_ms": 0.20057078689834235,
+        "p95_ms": 0.51185,
+        "p99_ms": 1.284516,
+        "max_ms": 112.607572
+      },
+      "terminal_gap_ms": 17.005773
+    },
+    "snk_tracks_process_interface_socket/thread-257858/0x55a21a07a0": {
+      "module": "snk_tracks_process_interface_socket",
+      "thread": "thread-257858",
+      "instance": "0x55a21a07a0",
+      "starts": 15021,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 15020,
+        "mean_ms": 7.988159342010653,
+        "p95_ms": 3.946447,
+        "p99_ms": 223.28367,
+        "max_ms": 254.737422,
+        "over_deadline": 614,
+        "over_deadline_percent": 4.087882822902796
+      },
+      "scope_wall_time": {
+        "count": 15021,
+        "mean_ms": 0.03848202090406764,
+        "p95_ms": 0.126981,
+        "p99_ms": 0.398443,
+        "max_ms": 5.4
+      },
+      "terminal_gap_ms": 16.989569
+    },
+    "tracks_file_write/thread-257858/0x55a21a07a0": {
+      "module": "tracks_file_write",
+      "thread": "thread-257858",
+      "instance": "0x55a21a07a0",
+      "starts": 15021,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 15020,
+        "mean_ms": 7.9881583815579225,
+        "p95_ms": 3.936895,
+        "p99_ms": 223.396281,
+        "max_ms": 254.728627,
+        "over_deadline": 614,
+        "over_deadline_percent": 4.087882822902796
+      },
+      "scope_wall_time": {
+        "count": 15021,
+        "mean_ms": 0.11821620098528726,
+        "p95_ms": 0.304906,
+        "p99_ms": 1.011033,
+        "max_ms": 112.435018
+      },
+      "terminal_gap_ms": 16.961662
+    },
+    "mod_sss_process/thread-257860/0x55a219e640": {
+      "module": "mod_sss_process",
+      "thread": "thread-257860",
+      "instance": "0x55a219e640",
+      "starts": 15020,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 15019,
+        "mean_ms": 7.9887105851920905,
+        "p95_ms": 3.404486,
+        "p99_ms": 221.787522,
+        "max_ms": 252.975318,
+        "over_deadline": 604,
+        "over_deadline_percent": 4.021572674612158
+      },
+      "scope_wall_time": {
+        "count": 15020,
+        "mean_ms": 0.584693354527297,
+        "p95_ms": 1.169366,
+        "p99_ms": 1.797252,
+        "max_ms": 5.349816
+      },
+      "terminal_gap_ms": 17.085069
+    },
+    "mod_istft_process/thread-257863/0x55a280cf80": {
+      "module": "mod_istft_process",
+      "thread": "thread-257863",
+      "instance": "0x55a280cf80",
+      "starts": 15021,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 15020,
+        "mean_ms": 7.988198050732357,
+        "p95_ms": 3.985431,
+        "p99_ms": 223.078978,
+        "max_ms": 253.31215,
+        "over_deadline": 608,
+        "over_deadline_percent": 4.047936085219707
+      },
+      "scope_wall_time": {
+        "count": 15021,
+        "mean_ms": 0.06890800193063046,
+        "p95_ms": 0.116722,
+        "p99_ms": 0.310833,
+        "max_ms": 3.014084
+      },
+      "terminal_gap_ms": 16.705589
+    },
+    "mod_istft_process/thread-257864/0x55a280f5b0": {
+      "module": "mod_istft_process",
+      "thread": "thread-257864",
+      "instance": "0x55a280f5b0",
+      "starts": 15021,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 15020,
+        "mean_ms": 7.988187759587217,
+        "p95_ms": 3.978762,
+        "p99_ms": 223.019488,
+        "max_ms": 253.069206,
+        "over_deadline": 604,
+        "over_deadline_percent": 4.021304926764314
+      },
+      "scope_wall_time": {
+        "count": 15021,
+        "mean_ms": 0.07118701557819053,
+        "p95_ms": 0.122278,
+        "p99_ms": 0.341388,
+        "max_ms": 2.158363
+      },
+      "terminal_gap_ms": 16.836866
+    },
+    "mod_resample_process_push/thread-257867/0x55a1bb53b0": {
+      "module": "mod_resample_process_push",
+      "thread": "thread-257867",
+      "instance": "0x55a1bb53b0",
+      "starts": 15021,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 15020,
+        "mean_ms": 7.988165013382157,
+        "p95_ms": 4.150263,
+        "p99_ms": 224.114665,
+        "max_ms": 254.633294,
+        "over_deadline": 613,
+        "over_deadline_percent": 4.081225033288948
+      },
+      "scope_wall_time": {
+        "count": 15021,
+        "mean_ms": 0.11055867798415552,
+        "p95_ms": 0.228462,
+        "p99_ms": 0.547109,
+        "max_ms": 3.606225
+      },
+      "terminal_gap_ms": 16.54409
+    },
+    "mod_resample_process_pop/thread-257867/0x55a1bb53b0": {
+      "module": "mod_resample_process_pop",
+      "thread": "thread-257867",
+      "instance": "0x55a1bb53b0",
+      "starts": 15021,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 15020,
+        "mean_ms": 7.988158504793609,
+        "p95_ms": 4.164351,
+        "p99_ms": 224.288934,
+        "max_ms": 254.657034,
+        "over_deadline": 614,
+        "over_deadline_percent": 4.087882822902796
+      },
+      "scope_wall_time": {
+        "count": 15021,
+        "mean_ms": 0.01428014213434525,
+        "p95_ms": 0.019259,
+        "p99_ms": 0.081277,
+        "max_ms": 2.769789
+      },
+      "terminal_gap_ms": 16.460109
+    },
+    "mod_resample_process_push/thread-257868/0x55a293bd70": {
+      "module": "mod_resample_process_push",
+      "thread": "thread-257868",
+      "instance": "0x55a293bd70",
+      "starts": 15021,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 15020,
+        "mean_ms": 7.988184645206391,
+        "p95_ms": 4.09547,
+        "p99_ms": 223.626496,
+        "max_ms": 253.659112,
+        "over_deadline": 608,
+        "over_deadline_percent": 4.047936085219707
+      },
+      "scope_wall_time": {
+        "count": 15021,
+        "mean_ms": 0.10948287317755143,
+        "p95_ms": 0.214888,
+        "p99_ms": 0.557831,
+        "max_ms": 3.527895
+      },
+      "terminal_gap_ms": 16.690682
+    },
+    "mod_resample_process_pop/thread-257868/0x55a293bd70": {
+      "module": "mod_resample_process_pop",
+      "thread": "thread-257868",
+      "instance": "0x55a293bd70",
+      "starts": 15021,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 15020,
+        "mean_ms": 7.988178946671105,
+        "p95_ms": 4.132463,
+        "p99_ms": 223.689422,
+        "max_ms": 253.703204,
+        "over_deadline": 608,
+        "over_deadline_percent": 4.047936085219707
+      },
+      "scope_wall_time": {
+        "count": 15021,
+        "mean_ms": 0.014740796684641502,
+        "p95_ms": 0.01913,
+        "p99_ms": 0.073796,
+        "max_ms": 5.682829
+      },
+      "terminal_gap_ms": 16.610589
+    },
+    "mod_volume_process/thread-257871/0x55a2a25a20": {
+      "module": "mod_volume_process",
+      "thread": "thread-257871",
+      "instance": "0x55a2a25a20",
+      "starts": 15021,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 15020,
+        "mean_ms": 7.987977332023968,
+        "p95_ms": 4.369906,
+        "p99_ms": 225.129237,
+        "max_ms": 254.897423,
+        "over_deadline": 614,
+        "over_deadline_percent": 4.087882822902796
+      },
+      "scope_wall_time": {
+        "count": 15021,
+        "mean_ms": 0.014199148392250848,
+        "p95_ms": 0.022907,
+        "p99_ms": 0.069648,
+        "max_ms": 2.397379
+      },
+      "terminal_gap_ms": 16.40859
+    },
+    "mod_volume_process/thread-257872/0x55a2a25b00": {
+      "module": "mod_volume_process",
+      "thread": "thread-257872",
+      "instance": "0x55a2a25b00",
+      "starts": 15021,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 15020,
+        "mean_ms": 7.988175022303595,
+        "p95_ms": 4.388485,
+        "p99_ms": 224.388606,
+        "max_ms": 254.542127,
+        "over_deadline": 612,
+        "over_deadline_percent": 4.0745672436751
+      },
+      "scope_wall_time": {
+        "count": 15021,
+        "mean_ms": 0.013822565142134344,
+        "p95_ms": 0.021926,
+        "p99_ms": 0.060203,
+        "max_ms": 1.40279
+      },
+      "terminal_gap_ms": 16.564015
+    },
+    "snk_hops_process/thread-257873/0x55a2b031f0": {
+      "module": "snk_hops_process",
+      "thread": "thread-257873",
+      "instance": "0x55a2b031f0",
+      "starts": 15021,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 15020,
+        "mean_ms": 7.987849460852198,
+        "p95_ms": 4.486462,
+        "p99_ms": 225.555584,
+        "max_ms": 254.917385,
+        "over_deadline": 626,
+        "over_deadline_percent": 4.167776298268975
+      },
+      "scope_wall_time": {
+        "count": 15021,
+        "mean_ms": 0.07693037494174822,
+        "p95_ms": 0.155499,
+        "p99_ms": 0.491591,
+        "max_ms": 110.09075
+      },
+      "terminal_gap_ms": 16.362868
+    },
+    "snk_hops_process/thread-257874/0x55a2b03b60": {
+      "module": "snk_hops_process",
+      "thread": "thread-257874",
+      "instance": "0x55a2b03b60",
+      "starts": 15021,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 15020,
+        "mean_ms": 7.988173848468708,
+        "p95_ms": 4.607465,
+        "p99_ms": 224.654717,
+        "max_ms": 254.586368,
+        "over_deadline": 625,
+        "over_deadline_percent": 4.161118508655126
+      },
+      "scope_wall_time": {
+        "count": 15021,
+        "mean_ms": 0.07813592277478197,
+        "p95_ms": 0.157796,
+        "p99_ms": 0.561183,
+        "max_ms": 111.347652
+      },
+      "terminal_gap_ms": 16.49209
+    },
+    "mod_classify_process/thread-257877/0x55a2b044e0": {
+      "module": "mod_classify_process",
+      "thread": "thread-257877",
+      "instance": "0x55a2b044e0",
+      "starts": 15021,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 15020,
+        "mean_ms": 7.988191171038615,
+        "p95_ms": 4.21573,
+        "p99_ms": 223.933754,
+        "max_ms": 253.796815,
+        "over_deadline": 613,
+        "over_deadline_percent": 4.081225033288948
+      },
+      "scope_wall_time": {
+        "count": 15021,
+        "mean_ms": 0.012152038279741694,
+        "p95_ms": 0.020963,
+        "p99_ms": 0.054944,
+        "max_ms": 0.927514
+      },
+      "terminal_gap_ms": 16.555664
+    },
+    "snk_categories_process/thread-257878/0x55a2b34f20": {
+      "module": "snk_categories_process",
+      "thread": "thread-257878",
+      "instance": "0x55a2b34f20",
+      "starts": 15021,
+      "unmatched_starts": 0,
+      "inter_frame": {
+        "count": 15020,
+        "mean_ms": 7.9881880024633825,
+        "p95_ms": 4.209209,
+        "p99_ms": 224.476233,
+        "max_ms": 253.892981,
+        "over_deadline": 615,
+        "over_deadline_percent": 4.094540612516645
+      },
+      "scope_wall_time": {
+        "count": 15021,
+        "mean_ms": 0.01121275773916517,
+        "p95_ms": 0.019778,
+        "p99_ms": 0.044185,
+        "max_ms": 0.858293
+      },
+      "terminal_gap_ms": 16.51333
+    }
+  },
+  "full_live_workload_verified": false,
+  "ssl_terminal_gap_ms": 18.578599,
+  "system_summary": {
+    "cpu": {
+      "cpu0": {
+        "mean_busy_percent": 18.875564327903295,
+        "max_busy_percent": 43.39622641509434,
+        "mean_iowait_percent": 2.2066192662750144,
+        "max_iowait_percent": 50.96153846153846
+      },
+      "cpu2": {
+        "mean_busy_percent": 17.410825603281154,
+        "max_busy_percent": 30.392156862745097,
+        "mean_iowait_percent": 1.9805251746585766,
+        "max_iowait_percent": 18.0
+      },
+      "cpu": {
+        "mean_busy_percent": 17.781105403028647,
+        "max_busy_percent": 29.047619047619047,
+        "mean_iowait_percent": 1.9450400835365524,
+        "max_iowait_percent": 21.5158924205379
+      },
+      "cpu3": {
+        "mean_busy_percent": 17.432882711035482,
+        "max_busy_percent": 32.075471698113205,
+        "mean_iowait_percent": 1.9200365472981415,
+        "max_iowait_percent": 40.77669902912621
+      },
+      "cpu1": {
+        "mean_busy_percent": 17.36579492468222,
+        "max_busy_percent": 30.18867924528302,
+        "mean_iowait_percent": 1.6499650609399508,
+        "max_iowait_percent": 13.861386138613861
+      }
+    },
+    "disk": {
+      "in_flight": {
+        "mean": 0.0,
+        "max": 0
+      },
+      "read_Bps": {
+        "mean": 1094.0681327796494,
+        "max": 119060.09565498144
+      },
+      "await_ms": {
+        "mean": 5.104666661692279,
+        "max": 120.97872340425532
+      },
+      "write_Bps": {
+        "mean": 1019126.8611849258,
+        "max": 15844211.097331489
+      },
+      "util_percent": {
+        "mean": 9.536093078457549,
+        "max": 74.37061614631976
+      }
+    },
+    "network": {
+      "rx_dropped_per_second": {
+        "mean": 0.0,
+        "max": 0.0
+      },
+      "rx_bytes_per_second": {
+        "mean": 5241.278567713809,
+        "max": 13509.843912449169
+      },
+      "tx_dropped_per_second": {
+        "mean": 0.0,
+        "max": 0.0
+      },
+      "rx_packets_per_second": {
+        "mean": 60.8393184649264,
+        "max": 110.96143172681808
+      },
+      "tx_packets_per_second": {
+        "mean": 98.42574566453304,
+        "max": 170.7098949643355
+      },
+      "tx_bytes_per_second": {
+        "mean": 81615.97411498116,
+        "max": 111900.60019659168
+      }
+    },
+    "thermal": [
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=58.4'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=57.9'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=58.9'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.4'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=58.9'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=58.4'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.4'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=58.4'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.4'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=57.9'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.4'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.9'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=57.9'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=58.4'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.4'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=58.4'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=58.4'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.4'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.4'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=58.4'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=58.9'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.9'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.9'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.4'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.9'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.4'C",
+        "arm_clock": "frequency(48)=1000265600"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=58.9'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.3'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=58.9'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=58.9'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.4'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.9'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.4'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.8'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.4'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.8'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.4'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.4'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.8'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.3'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.9'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=58.9'C",
+        "arm_clock": "frequency(48)=1000265600"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.9'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.8'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.9'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.9'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.8'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.4'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.3'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.4'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.3'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.9'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.8'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.9'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.8'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.3'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.8'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.3'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.3'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.8'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.3'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.9'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.3'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.3'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.8'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.3'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=62.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.3'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.8'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.8'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=59.9'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.3'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.8'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.8'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.3'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.8'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.8'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.8'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.3'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.8'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.8'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.8'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=62.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.8'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.8'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.8'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.8'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.3'C",
+        "arm_clock": "frequency(48)=1100302720"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=62.3'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=62.3'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.8'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.3'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.8'C",
+        "arm_clock": "frequency(48)=900228544"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.3'C",
+        "arm_clock": "frequency(48)=1800457088"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=60.8'C",
+        "arm_clock": "frequency(48)=1800404352"
+      },
+      {
+        "throttled": "throttled=0x0",
+        "temperature": "temp=61.8'C",
+        "arm_clock": "frequency(48)=1800457088"
+      }
+    ]
+  },
+  "alsa_capture": {
+    "device": "multi_capture",
+    "rate_hz": 16000,
+    "hop_frames": 128,
+    "period_frames": 2000,
+    "period_ms": 125.0,
+    "buffer_frames": 6000,
+    "buffer_ms": 375.0
+  },
+  "network_transfer": {
+    "streams": {
+      "9002": {
+        "connections": [
+          {
+            "peer": "<private-ip>:9002",
+            "sent_bytes": 3432748,
+            "acked_bytes": 3432780,
+            "sample_seconds": 119.294690139
+          }
+        ],
+        "sent_bytes": 3432748,
+        "acked_bytes": 3432780,
+        "sample_seconds": 119.294690139
+      },
+      "9003": {
+        "connections": [
+          {
+            "peer": "<private-ip>:9003",
+            "sent_bytes": 5176530,
+            "acked_bytes": 5177940,
+            "sample_seconds": 119.294690139
+          }
+        ],
+        "sent_bytes": 5176530,
+        "acked_bytes": 5177940,
+        "sample_seconds": 119.294690139
+      }
+    },
+    "interface_tx_estimate_bytes": 9736552
+  },
+  "sd_write_deadline": {
+    "count": 15000,
+    "bytes": 23040000,
+    "over_deadline_count": 3,
+    "over_deadline_percent": 0.02,
+    "over_deadline_total_ms": 171.626837,
+    "mean_ms": 0.03790443286666667,
+    "p95_ms": 0.088296,
+    "p99_ms": 0.160796,
+    "max_ms": 118.021086
+  },
+  "recording_directory": "~/chatak-odas_20261004_93a1b81/live_timing_runs/20261008T143126.057422Z/audio",
+  "inactive_modules": [],
+  "ssl_inter_frame": {
+    "count": 15015,
+    "mean_ms": 7.990657735597736,
+    "p95_ms": 2.610452,
+    "p99_ms": 222.451001,
+    "max_ms": 227.586571,
+    "over_deadline": 480,
+    "over_deadline_percent": 3.196803196803197
+  },
+  "stage_timing": {
+    "SSL": {
+      "frames": 15017,
+      "stages_ms": {
+        "Pre-XCorr": 0.083,
+        "GCC-PHAT XCorr": 0.226,
+        "SRP Accumulation": 0.141,
+        "Peak Extraction + Mapping": 0.002,
+        "Freq at Peak": 0.312,
+        "Format DOA Angles": 0.045,
+        "Full SSL Frame": 0.808
+      }
+    },
+    "SST": {
+      "frames": 15017,
+      "stages_ms": {
+        "Track Management": 0.002,
+        "Predict": 0.005,
+        "Coherence": 0.007,
+        "Mixture + Assignment": 0.091,
+        "Update": 0.005,
+        "Activity + Classify": 0.211,
+        "Transitions + Dynamic": 0.002,
+        "Output Copy": 0.004,
+        "Full SST Frame": 0.327
+      }
+    }
+  },
+  "recorder": {
+    "bytes": 23040000,
+    "write_wall_time": {
+      "count": 15000,
+      "mean_ms": 0.03790443286666667,
+      "p95_ms": 0.088296,
+      "p99_ms": 0.160796,
+      "max_ms": 118.021086
+    },
+    "read_start_intervals": {
+      "count": 14999,
+      "mean_ms": 8.000547904193613,
+      "p95_ms": 123.777959,
+      "p99_ms": 124.442988,
+      "max_ms": 249.090801
+    }
+  },
+  "spike_context": {
+    "spikes": 480,
+    "matched_to_system_samples": 479,
+    "overlapping_nonzero_iowait": 479,
+    "interpretation": "One-second system-bin overlap, not per-frame attribution or causal proof"
+  },
+  "overrun_handling": {
+    "available": true,
+    "spikes": 480,
+    "windows": {
+      "first_5s": {
+        "count": 640,
+        "mean_ms": 7.778353196875,
+        "p95_ms": 2.584494,
+        "p99_ms": 221.550967,
+        "max_ms": 225.017435,
+        "over_deadline": 20,
+        "over_deadline_percent": 3.125
+      },
+      "middle_without_5s_edges": {
+        "count": 13749,
+        "mean_ms": 7.984220312968216,
+        "p95_ms": 2.614896,
+        "p99_ms": 222.451001,
+        "max_ms": 227.586571,
+        "over_deadline": 439,
+        "over_deadline_percent": 3.192959487962761
+      },
+      "last_5s": {
+        "count": 624,
+        "mean_ms": 7.652692790064102,
+        "p95_ms": 2.467933,
+        "p99_ms": 222.482581,
+        "max_ms": 225.030439,
+        "over_deadline": 19,
+        "over_deadline_percent": 3.0448717948717947
+      }
+    },
+    "long_pause_threshold_ms": 80.0,
+    "long_pauses": 480,
+    "other_deadline_exceedances": 0,
+    "long_pause_spacing_median_ms": 250.03261,
+    "catchup_assessment": "Observed repeated catch-up: the monitored SSL input FIFO drains and relative schedule medians show less than one frame-period change in this window. This does not establish absolute end-to-end latency or hardware sample-loss status.",
+    "spike_spacing_ms": {
+      "count": 479,
+      "mean_ms": 250.00429507933194,
+      "p95_ms": 252.234888,
+      "p99_ms": 253.88217,
+      "max_ms": 261.401416
+    },
+    "median_spike_spacing_ms": 250.03261,
+    "frame_spacing_counts": {
+      "30": 1,
+      "31": 357,
+      "32": 121
+    },
+    "skipped_ssl_frame_ids": 0,
+    "duplicate_or_reversed_ssl_ids": 0,
+    "gap_worker_wait": {
+      "count": 480,
+      "mean_ms": 218.91115754375,
+      "p95_ms": 224.481139,
+      "p99_ms": 226.284185,
+      "max_ms": 226.888852
+    },
+    "cycles_with_wait_data": 479,
+    "complete_cycles": 479,
+    "cycles_input_queue_reached_zero": 479,
+    "input_queue_samples": 15016,
+    "input_queue_max_after_pop": 30,
+    "burst_span": {
+      "count": 479,
+      "mean_ms": 30.152911983298537,
+      "p95_ms": 39.722047,
+      "p99_ms": 53.409623,
+      "max_ms": 58.692788
+    },
+    "relative_schedule_recovery": {
+      "count": 479,
+      "mean_ms": 211.85126338204614,
+      "p95_ms": 219.99280700000236,
+      "p99_ms": 222.54632100000163,
+      "max_ms": 223.07012099999702
+    },
+    "relative_residual_min_ms": -149.12714500000038,
+    "relative_residual_max_ms": 88.16831800000364,
+    "first_edge_median_residual_ms": -33.83635400000003,
+    "last_edge_median_residual_ms": -31.69224199999735,
+    "edge_median_residual_change_ms": 2.1441120000026785,
+    "edge_window_seconds": 10.0,
+    "interpretation": "Relative frame-ID schedule and one SSL input FIFO, not hardware loss detection or absolute capture-to-display latency"
+  }
+}

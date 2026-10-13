@@ -1,0 +1,112 @@
+    
+    #include <amodule/amod_ssl.h>
+    #include <utils/live_timing.h>
+
+    amod_ssl_obj * amod_ssl_construct(const mod_ssl_cfg * mod_ssl_config, const msg_spectra_cfg * msg_spectra_config, const msg_pots_cfg * msg_pots_config) {
+
+        amod_ssl_obj * obj;
+
+        obj = (amod_ssl_obj *) malloc(sizeof(amod_ssl_obj));
+
+        obj->mod_ssl = mod_ssl_construct(mod_ssl_config, msg_spectra_config, msg_pots_config);
+        
+        obj->in = (amsg_spectra_obj *) NULL;
+        obj->in1 = (amsg_chatak_id_obj *) NULL;
+        
+        obj->out = (amsg_pots_obj *) NULL;
+
+        obj->thread = thread_construct(&amod_ssl_thread, (void *) obj);
+
+        mod_ssl_disable(obj->mod_ssl);
+
+        return obj;
+
+    }
+
+    void amod_ssl_destroy(amod_ssl_obj * obj) {
+
+        mod_ssl_destroy(obj->mod_ssl);
+        thread_destroy(obj->thread);
+
+        free((void *) obj); 
+
+    }
+
+    void amod_ssl_connect(amod_ssl_obj * obj, amsg_spectra_obj * in, amsg_chatak_id_obj * in1, amsg_pots_obj * out) {
+
+        obj->in = in;
+        obj->in1 = in1;
+        obj->out = out;
+
+    }
+
+    void amod_ssl_disconnect(amod_ssl_obj * obj) {
+
+        obj->in = (amsg_spectra_obj *) NULL;
+        obj->in1 = (amsg_chatak_id_obj *) NULL;
+        obj->out = (amsg_pots_obj *) NULL;
+
+    }
+
+    void amod_ssl_enable(amod_ssl_obj * obj) {
+
+        mod_ssl_enable(obj->mod_ssl);
+
+    }
+
+    void amod_ssl_disable(amod_ssl_obj * obj) {
+
+        mod_ssl_disable(obj->mod_ssl);
+
+    }
+
+    void * amod_ssl_thread(void * ptr) {
+
+        amod_ssl_obj * obj;
+        msg_spectra_obj * msg_spectra_in;
+        msg_chatak_id_obj * msg_chatak_id_in1;
+        msg_pots_obj * msg_pots_out;
+        int debug = 0;
+        int rtnValue;
+
+        obj = (amod_ssl_obj *) ptr;
+
+        while(1) {
+
+            // Pop a message, process, and push back
+            if (odas_timing_enabled()) {
+                odas_timing_queue(obj, 0, fifo_nElements(obj->in->filled), "before_pop");
+            }
+            odas_timing_scope wait_scope = odas_timing_begin("ssl_worker_wait", obj);
+            msg_spectra_in = amsg_spectra_filled_pop(obj->in);
+            if (odas_timing_enabled()) {
+                odas_timing_queue(obj, msg_spectra_in->timeStamp,
+                                   fifo_nElements(obj->in->filled), "after_pop");
+            }
+            msg_chatak_id_in1 = amsg_chatak_id_filled_pop(obj->in1);
+            
+            if (debug) {
+            //printf("[SSL_THREAD] filled chatak ID msg:\n");
+            msg_chatak_id_printf(msg_chatak_id_in1, "PRE-PROCESS");
+                }
+            
+            msg_pots_out = amsg_pots_empty_pop(obj->out);
+            wait_scope.frame = msg_spectra_in->timeStamp;
+            odas_timing_end(&wait_scope);
+            mod_ssl_connect(obj->mod_ssl, msg_spectra_in,msg_chatak_id_in1, msg_pots_out);
+            rtnValue = mod_ssl_process(obj->mod_ssl);
+            mod_ssl_disconnect(obj->mod_ssl);
+            amsg_spectra_empty_push(obj->in, msg_spectra_in);
+            amsg_chatak_id_empty_push(obj->in1, msg_chatak_id_in1);
+            
+            amsg_pots_filled_push(obj->out, msg_pots_out);
+
+            // If this is the last frame, rtnValue = -1
+            if (rtnValue == -1) {
+                break;
+            }
+
+
+        }
+
+    }

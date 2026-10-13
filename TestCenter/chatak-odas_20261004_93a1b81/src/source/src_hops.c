@@ -1,0 +1,793 @@
+/**
+* \file     src_hops.c
+
+*/
+
+#include <source/src_hops.h>
+#include <errno.h>
+    #include <utils/live_timing.h>
+
+src_hops_obj * src_hops_construct(const src_hops_cfg * src_hops_config, const msg_hops_cfg * msg_hops_config) {
+
+    src_hops_obj * obj;
+    unsigned int nBytes;
+
+    obj = (src_hops_obj *) malloc(sizeof(src_hops_obj));
+
+    obj->timeStamp = 0;
+
+    obj->hopSize = msg_hops_config->hopSize;
+    obj->nChannels = msg_hops_config->nChannels;
+    obj->fS = msg_hops_config->fS;
+
+    obj->frameDurationSec = (double)obj->hopSize / (double)obj->fS;
+    obj->syntheticTimeUs = 0;
+
+
+    obj->format = format_clone(src_hops_config->format);
+    obj->interface = interface_clone(src_hops_config->interface);
+    
+    obj->timeStamps = NULL;
+    obj->numTimeStamps = -1;
+    obj->timeStampIndex = 0;
+
+    if (src_hops_config->channel_map != NULL)
+    {
+        // Will not be null if in pulseaudio mode
+        memcpy(&obj->cm, src_hops_config->channel_map, sizeof(pa_channel_map));
+    }
+    else if (obj->interface->type == interface_pulseaudio)
+    {
+        // Can't be null if we are in pulseaudio mode
+        printf("Error: Pulseaudio interface requires channel map.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    memset(obj->bytes, 0x00, 4 * sizeof(char));
+
+    if (!((obj->interface->type == interface_file ||
+            obj->interface->type == interface_soundcard ||
+            obj->interface->type == interface_pulseaudio ||
+            obj->interface->type == interface_socket) &&
+          (obj->format->type == format_binary_int08 ||
+           obj->format->type == format_binary_int16 ||
+           obj->format->type == format_binary_int24 ||
+           obj->format->type == format_binary_int32))) {
+
+        printf("Source hops: Invalid interface and/or format.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    obj->buffer = (char *) malloc(sizeof(char) * obj->hopSize * obj->nChannels * 4);
+    memset(obj->buffer, 0x00, sizeof(char) * obj->hopSize * obj->nChannels * 4);
+
+    switch (obj->format->type) {
+
+    case format_binary_int08:
+        obj->bufferSize = obj->hopSize * obj->nChannels * 1;
+        break;
+    case format_binary_int16:
+        obj->bufferSize = obj->hopSize * obj->nChannels * 2;
+        break;
+    case format_binary_int24:
+        obj->bufferSize = obj->hopSize * obj->nChannels * 3;
+        break;
+    case format_binary_int32:
+        obj->bufferSize = obj->hopSize * obj->nChannels * 4;
+        break;
+    }
+
+    obj->out = (msg_hops_obj *) NULL;
+
+    return obj;
+}
+
+void src_hops_destroy(src_hops_obj * obj) {
+
+    free((void *) obj->buffer);
+    format_destroy(obj->format);
+    interface_destroy(obj->interface);
+
+    free((void *) obj);
+}
+
+void src_hops_connect(src_hops_obj * obj, msg_hops_obj * out) {
+
+    obj->out = out;
+}
+
+void src_hops_disconnect(src_hops_obj * obj) {
+
+    obj->out = (msg_hops_obj *) NULL;
+}
+
+void src_hops_open(src_hops_obj * obj) {
+
+    switch (obj->interface->type) {
+
+        case interface_file:
+
+            src_hops_open_interface_file(obj);
+
+        break;
+
+        case interface_soundcard:
+
+            src_hops_open_interface_soundcard(obj);
+
+        break;
+
+        case interface_pulseaudio:
+
+                src_hops_open_interface_pulseaudio(obj);
+
+        break;
+
+        case interface_socket:
+
+            src_hops_open_interface_socket(obj);
+
+        break;
+
+        default:
+
+            printf("Source hops: Invalid interface type.\n");
+            exit(EXIT_FAILURE);
+
+        break;
+
+    }
+
+}
+
+
+void src_hops_open_interface_file(src_hops_obj *obj) {
+    // --- Open raw audio file ---
+    obj->fp = fopen(obj->interface->fileName, "rb");
+    if (obj->fp == NULL) {
+        printf("Cannot open raw file: %s\n", obj->interface->fileName);
+        exit(EXIT_FAILURE);
+    }
+
+    // --- Construct .txt filename from .raw ---
+    char tsFileName[256];
+    strcpy(tsFileName, obj->interface->fileName);
+    char *ext = strstr(tsFileName, ".raw");
+    if (ext) {
+        strcpy(ext, ".txt");
+    }
+
+    // --- Try opening timestamp file ---
+    FILE *fp_ts = fopen(tsFileName, "r");
+    if (fp_ts != NULL) {
+        obj->timeStamps = malloc(sizeof(uint64_t) * 100000); // Adjust size as needed
+        obj->numTimeStamps = 0;
+
+        while (fscanf(fp_ts, "%lu", &obj->timeStamps[obj->numTimeStamps]) == 1) {
+            obj->numTimeStamps++;
+        }
+
+        fclose(fp_ts);
+        obj->timeStampIndex = 0;
+
+        printf("Loaded %d timestamps from %s\n", obj->numTimeStamps, tsFileName);
+    } else {
+        obj->timeStamps = NULL;
+        obj->numTimeStamps = -1;
+        obj->timeStampIndex = 0;
+
+        printf("No timestamp file found. Using synthetic timestamps.\n");
+    }
+}
+
+
+void src_hops_open_interface_soundcard(src_hops_obj * obj) {
+
+    snd_pcm_hw_params_t * hw_params;
+    snd_pcm_format_t format;
+    int err;
+
+    switch (obj->format->type) {
+
+        case format_binary_int08:
+
+            format = SND_PCM_FORMAT_S8;
+
+        break;
+
+        case format_binary_int16:
+
+            format = SND_PCM_FORMAT_S16_LE;
+
+        break;
+
+        case format_binary_int24:
+
+            format = SND_PCM_FORMAT_S24_LE;
+
+        break;
+
+        case format_binary_int32:
+
+            format = SND_PCM_FORMAT_S32_LE;
+
+        break;
+
+        default:
+
+            printf("Source hops: Invalid format.\n");
+            exit(EXIT_FAILURE);
+
+        break;
+
+    }
+
+    if ((err = snd_pcm_open(&(obj->ch), obj->interface->deviceName, SND_PCM_STREAM_CAPTURE, 0)) < 0) {
+        printf("Source hops: Cannot open audio device %s: %s\n", obj->interface->deviceName, snd_strerror(err));
+        exit(EXIT_FAILURE);
+    }
+
+    if ((err = snd_pcm_hw_params_malloc(&hw_params)) < 0) {
+        printf("Source hops: Cannot allocate hardware parameter structure: %s\n", snd_strerror(err));
+        exit(EXIT_FAILURE);
+    }
+
+    if ((err = snd_pcm_hw_params_any(obj->ch, hw_params)) < 0) {
+        printf("Source hops: Cannot initialize hardware parameter structure: %s\n", snd_strerror(err));
+        exit(EXIT_FAILURE);
+    }
+
+    if ((err = snd_pcm_hw_params_set_access(obj->ch, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
+        printf("Source hops: Cannot set access type: %s\n", snd_strerror(err));
+        exit(EXIT_FAILURE);
+    }
+
+    if ((err = snd_pcm_hw_params_set_format(obj->ch, hw_params, format)) < 0) {
+        printf("Source hops: Cannot set sample format: %s\n", snd_strerror(err));
+        exit(EXIT_FAILURE);
+    }
+
+    if ((err = snd_pcm_hw_params_set_rate(obj->ch, hw_params, obj->fS, 0)) < 0) {
+        printf("Source hops: Cannot set sample rate: %s\n", snd_strerror(err));
+        exit(EXIT_FAILURE);
+    }
+
+    if ((err = snd_pcm_hw_params_set_channels(obj->ch, hw_params, obj->nChannels)) < 0) {
+        printf("Source hops: Cannot set channel count: %s\n", snd_strerror(err));
+        exit(EXIT_FAILURE);
+    }
+
+    if ((err = snd_pcm_hw_params(obj->ch, hw_params)) < 0) {
+        printf("Source hops: Cannot set parameters: %s\n", snd_strerror(err));
+        exit(EXIT_FAILURE);
+    }
+
+    {
+        snd_pcm_uframes_t period_size;
+        snd_pcm_uframes_t buffer_size;
+        unsigned int actual_rate;
+        int direction = 0;
+
+        if ((err = snd_pcm_hw_params_current(obj->ch, hw_params)) < 0 ||
+            (err = snd_pcm_hw_params_get_period_size(hw_params, &period_size, &direction)) < 0 ||
+            (err = snd_pcm_hw_params_get_buffer_size(hw_params, &buffer_size)) < 0 ||
+            (err = snd_pcm_hw_params_get_rate(hw_params, &actual_rate, &direction)) < 0) {
+            fprintf(stderr, "Source hops: Cannot query negotiated ALSA parameters: %s\n",
+                    snd_strerror(err));
+        }
+        else {
+            fprintf(stderr,
+                    "ALSA capture params: device=%s rate=%u hop=%u period=%lu frames (%.3f ms) buffer=%lu frames (%.3f ms)\n",
+                    obj->interface->deviceName, actual_rate, obj->hopSize,
+                    (unsigned long) period_size,
+                    1000.0 * (double) period_size / (double) actual_rate,
+                    (unsigned long) buffer_size,
+                    1000.0 * (double) buffer_size / (double) actual_rate);
+        }
+    }
+
+    snd_pcm_hw_params_free(hw_params);
+
+    if ((err = snd_pcm_prepare(obj->ch)) < 0) {
+        printf("Source hops: Cannot prepare audio interface for use: %s\n", snd_strerror(err));
+        exit(EXIT_FAILURE);
+    }
+
+}
+
+void src_hops_open_interface_pulseaudio(src_hops_obj * obj) {
+
+    pa_sample_format_t format;
+
+    switch (obj->format->type) {
+
+        case format_binary_int08:
+
+            format = PA_SAMPLE_U8;
+
+        break;
+
+        case format_binary_int16:
+
+            format = PA_SAMPLE_S16LE;
+
+        break;
+
+        case format_binary_int24:
+
+            format = PA_SAMPLE_S24LE;
+
+        break;
+
+        case format_binary_int32:
+
+            format = PA_SAMPLE_S32LE;
+
+        break;
+
+        default:
+
+            printf("Source hops: Invalid format.\n");
+            exit(EXIT_FAILURE);
+
+        break;
+
+    }
+
+    obj->ss.format = format;
+    obj->ss.rate = obj->fS;
+    obj->ss.channels = obj->nChannels;
+
+    int err;
+    if (!(obj->pa = pa_simple_new(NULL, "Odas", PA_STREAM_RECORD, obj->interface->deviceName, "record", &obj->ss, &obj->cm, NULL, &err))) {
+        printf("Source hops: Cannot open pulseaudio device %s: %s\n", obj->interface->deviceName, pa_strerror(err));
+        exit(EXIT_FAILURE);
+    }
+
+}
+
+void src_hops_open_interface_socket(src_hops_obj * obj) {
+
+    memset(&(obj->sserver), 0x00, sizeof(struct sockaddr_in));
+
+    obj->sserver.sin_family = AF_INET;
+    obj->sserver.sin_addr.s_addr = inet_addr(obj->interface->ip);
+    obj->sserver.sin_port = htons(obj->interface->port);
+    obj->sid = socket(AF_INET, SOCK_STREAM, 0);
+
+    if ((connect(obj->sid, (struct sockaddr *) &(obj->sserver), sizeof(obj->sserver))) < 0) {
+        printf("Source hops: Cannot connect to server\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void src_hops_close(src_hops_obj * obj) {
+
+    switch (obj->interface->type) {
+
+        case interface_file:
+
+            src_hops_close_interface_file(obj);
+
+        break;
+
+        case interface_soundcard:
+
+            src_hops_close_interface_soundcard(obj);
+
+        break;
+
+        case interface_pulseaudio:
+
+            src_hops_close_interface_pulseaudio(obj);
+
+        break;
+
+        case interface_socket:
+
+            src_hops_close_interface_socket(obj);
+
+        break;
+
+        default:
+
+            printf("Source hops: Invalid interface type.\n");
+            exit(EXIT_FAILURE);
+
+        break;
+    }
+}
+
+void src_hops_close_interface_file(src_hops_obj * obj) {
+
+    fclose(obj->fp);
+
+}
+
+void src_hops_close_interface_soundcard(src_hops_obj * obj) {
+
+    snd_pcm_close(obj->ch);
+
+}
+   
+void src_hops_close_interface_pulseaudio(src_hops_obj * obj) {
+
+    if (obj->pa != NULL)
+        pa_simple_free(obj->pa);
+
+}
+
+void src_hops_close_interface_socket(src_hops_obj * obj) {
+    
+    close(obj->sid);
+
+}
+
+int src_hops_process(src_hops_obj * obj) {
+    ODAS_TIMING_SCOPE(obj);
+
+    int rtnValue;
+
+    switch (obj->format->type) {
+
+        case format_binary_int08:
+
+            src_hops_process_format_binary_int08(obj);
+
+        break;
+
+        case format_binary_int16:
+
+            src_hops_process_format_binary_int16(obj);
+
+        break;
+
+        case format_binary_int24:
+
+            src_hops_process_format_binary_int24(obj);
+
+        break;
+
+        case format_binary_int32:
+
+            src_hops_process_format_binary_int32(obj);
+
+        break;
+
+        default:
+
+            printf("Source hops: Invalid format type.\n");
+            exit(EXIT_FAILURE);
+
+        break;
+    }
+
+    switch (obj->interface->type) {
+
+        case interface_file:
+
+            rtnValue = src_hops_process_interface_file(obj);
+
+        break;
+
+        case interface_soundcard:
+
+            rtnValue = src_hops_process_interface_soundcard(obj);
+
+        break;
+
+        case interface_pulseaudio:
+
+                rtnValue = src_hops_process_interface_pulseaudio(obj);
+
+        break;
+
+        case interface_socket:
+
+            rtnValue = src_hops_process_interface_socket(obj);
+
+        break;
+
+        default:
+
+            printf("Source hops: Invalid interface type.\n");
+            exit(EXIT_FAILURE);
+
+        break;
+    }
+
+    obj->timeStamp++;
+    obj->out->timeStamp = obj->timeStamp;
+
+    return rtnValue;
+}
+
+int src_hops_process_interface_file(src_hops_obj *obj) {
+    int rtnValue;
+    int nBytesTotal;
+
+    // Read one hop-sized chunk
+    nBytesTotal = fread(obj->buffer, 1, obj->bufferSize, obj->fp);
+
+    if (nBytesTotal == obj->bufferSize) {
+        // Hop duration in microseconds (independent of channels)
+        unsigned int hop_delay_us = (obj->hopSize * 1000000) / obj->fS;
+
+        // Advance synthetic clock
+        obj->syntheticTimeUs += hop_delay_us;
+
+        // If timestamp file exists, override with its deltas
+        if (obj->timeStamps && obj->timeStampIndex + 1 < obj->numTimeStamps) {
+            uint64_t t1 = obj->timeStamps[obj->timeStampIndex];
+            uint64_t t2 = obj->timeStamps[obj->timeStampIndex + 1];
+            uint64_t delta_us = (t2 > t1) ? (t2 - t1) : hop_delay_us;
+            obj->syntheticTimeUs = t2;  // sync synthetic clock to recorded timestamp
+            hop_delay_us = (unsigned int)delta_us;
+        }
+
+        // Apply pacing every hop
+        //printf("Hop %d: sleeping %u us\n", obj->timeStampIndex, hop_delay_us);
+        usleep(hop_delay_us);
+
+        // Decode buffer
+        switch (obj->format->type) {
+            case format_binary_int08:
+                src_hops_process_format_binary_int08(obj);
+                break;
+            case format_binary_int16:
+                src_hops_process_format_binary_int16(obj);
+                break;
+            case format_binary_int24:
+                src_hops_process_format_binary_int24(obj);
+                break;
+            case format_binary_int32:
+                src_hops_process_format_binary_int32(obj);
+                break;
+            default:
+                printf("Unsupported format type.\n");
+                exit(EXIT_FAILURE);
+        }
+
+        // Assign timestamp
+        if (obj->timeStamps && obj->timeStampIndex < obj->numTimeStamps) {
+            obj->out->timeStamp = obj->timeStamps[obj->timeStampIndex];
+        } else {
+            obj->out->timeStamp = obj->syntheticTimeUs;
+        }
+
+        obj->timeStampIndex++;
+        rtnValue = 0;
+
+    } else {
+        msg_hops_zero(obj->out);
+        rtnValue = -1;
+    }
+
+    return rtnValue;
+}
+
+
+
+int src_hops_process_interface_soundcard(src_hops_obj * obj) {
+
+    snd_pcm_sframes_t frames_read = 0;
+    snd_pcm_sframes_t frames_remaining = (snd_pcm_sframes_t) obj->hopSize;
+    size_t bytes_per_frame = obj->bufferSize / obj->hopSize;
+    int rtnValue;
+
+    while (frames_remaining > 0) {
+        snd_pcm_sframes_t count = snd_pcm_readi(
+            obj->ch,
+            obj->buffer + (size_t) frames_read * bytes_per_frame,
+            (snd_pcm_uframes_t) frames_remaining);
+
+        if (count == -EINTR) {
+            continue;
+        }
+
+        if (count < 0) {
+            int error = (int) count;
+            int recover_result = snd_pcm_recover(obj->ch, error, 1);
+            if (recover_result < 0) {
+                fprintf(stderr, "Source hops: ALSA capture read failed: %s\n",
+                        snd_strerror(recover_result));
+                return -1;
+            }
+            fprintf(stderr,
+                    "Source hops: recovered ALSA capture error: %s; samples may have been lost\n",
+                    snd_strerror(error));
+            continue;
+        }
+
+        if (count == 0) {
+            fprintf(stderr, "Source hops: ALSA capture returned zero frames\n");
+            return -1;
+        }
+
+        frames_read += count;
+        frames_remaining -= count;
+    }
+
+    rtnValue = 0;
+    return rtnValue;
+}
+
+int src_hops_process_interface_pulseaudio(src_hops_obj * obj) {
+
+    int rtnValue;
+    int err;
+
+    if (pa_simple_read(obj->pa, obj->buffer, obj->bufferSize, &err) < 0) {
+
+        rtnValue = -1;
+
+    }
+    else {
+
+        rtnValue = 0;
+
+    }
+
+    return rtnValue;
+
+}
+
+
+int src_hops_process_interface_socket(src_hops_obj * obj) {
+    
+    unsigned int nBytesTotal;
+    int rtnValue;
+
+    // ssize_t recv(int sockfd, void *buf, size_t len, int flags);
+    nBytesTotal = recv(obj->sid, obj->buffer, obj->bufferSize, MSG_WAITALL);
+
+    if (nBytesTotal == obj->bufferSize) {
+
+        rtnValue = 0;
+        
+    }
+    else {
+
+        rtnValue = -1;
+    
+    }
+
+    return rtnValue;
+}
+
+void src_hops_process_format_binary_int08(src_hops_obj * obj) {
+
+    unsigned int iSample;
+    unsigned int iChannel;
+    unsigned int nBytes;
+    float sample;
+
+    nBytes = 1;
+
+    for (iSample = 0; iSample < obj->hopSize; iSample++) {
+
+        for (iChannel = 0; iChannel < obj->nChannels; iChannel++) {
+
+            memcpy(&(obj->bytes[4 - nBytes]),
+                   &(obj->buffer[(iSample * obj->nChannels + iChannel) * nBytes]),
+                   sizeof(char) * nBytes);
+
+            sample = pcm_signedXXbits2normalized(obj->bytes, nBytes);
+
+            obj->out->hops->array[iChannel][iSample] = sample;
+            
+        }
+        
+    }
+    
+}
+
+void src_hops_process_format_binary_int16(src_hops_obj * obj) {
+
+    unsigned int iSample;
+    unsigned int iChannel;
+    unsigned int nBytes;
+    float sample;
+
+    nBytes = 2;
+
+    for (iSample = 0; iSample < obj->hopSize; iSample++) {
+
+        for (iChannel = 0; iChannel < obj->nChannels; iChannel++) {
+
+            memcpy(&(obj->bytes[4 - nBytes]),
+                   &(obj->buffer[(iSample * obj->nChannels + iChannel) * nBytes]),
+                   sizeof(char) * nBytes);
+
+            sample = pcm_signedXXbits2normalized(obj->bytes, nBytes);
+
+            obj->out->hops->array[iChannel][iSample] = sample;
+            
+        }
+        
+    }
+    
+}
+
+void src_hops_process_format_binary_int24(src_hops_obj * obj) {
+
+    unsigned int iSample;
+    unsigned int iChannel;
+    unsigned int nBytes;
+    float sample;
+
+    nBytes = 3;
+
+    for (iSample = 0; iSample < obj->hopSize; iSample++) {
+
+        for (iChannel = 0; iChannel < obj->nChannels; iChannel++) {
+
+            memcpy(&(obj->bytes[4 - nBytes]),
+                   &(obj->buffer[(iSample * obj->nChannels + iChannel) * nBytes]),
+                   sizeof(char) * nBytes);
+
+            sample = pcm_signedXXbits2normalized(obj->bytes, nBytes);
+
+            obj->out->hops->array[iChannel][iSample] = sample;
+            
+        }
+        
+    }
+    
+}
+
+void src_hops_process_format_binary_int32(src_hops_obj * obj) {
+
+    unsigned int iSample;
+    unsigned int iChannel;
+    unsigned int nBytes;
+    float sample;
+
+    nBytes = 4;
+
+    for (iSample = 0; iSample < obj->hopSize; iSample++) {
+
+        for (iChannel = 0; iChannel < obj->nChannels; iChannel++) {
+
+            memcpy(&(obj->bytes[4 - nBytes]),
+                   &(obj->buffer[(iSample * obj->nChannels + iChannel) * nBytes]),
+                   sizeof(char) * nBytes);
+
+            sample = pcm_signedXXbits2normalized(obj->bytes, nBytes);
+
+            obj->out->hops->array[iChannel][iSample] = sample;
+        
+        }
+    
+    }
+
+}
+
+src_hops_cfg * src_hops_cfg_construct(void) {
+
+    src_hops_cfg * cfg;
+
+    cfg = (src_hops_cfg *) malloc(sizeof(src_hops_cfg));
+
+    cfg->format = (format_obj *) NULL;
+    cfg->interface = (interface_obj *) NULL;
+
+    return cfg;
+}
+
+
+void src_hops_cfg_destroy(src_hops_cfg * src_hops_config) {
+
+    if (src_hops_config->format != NULL) {
+        format_destroy(src_hops_config->format);
+    }
+    if (src_hops_config->interface != NULL) {
+        interface_destroy(src_hops_config->interface);
+    }
+    if (src_hops_config->channel_map != NULL) {
+        free((void *) src_hops_config->channel_map);
+    }
+
+    free((void *) src_hops_config);
+    
+}

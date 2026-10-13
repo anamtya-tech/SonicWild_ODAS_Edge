@@ -1,0 +1,32 @@
+| + Loaded Classifier................. [Done] |
+[SST Audio Event] pos=(  0.00,   0.00,   0.00) class=Frog conf=0.80
+[SST Audio Event] pos=(  0.00,   0.00,   0.00) class=Frog conf=0.94
+[SST Audio Event] pos=(  0.00,   0.00,   0.00) class=Frog conf=0.47
++--------------------------------------------------+
+|           SSL Stage Timing (avg / frame)         |
++--------------------------------------------------+
+| Frames profiled.............         1766 |
+| Pre-XCorr...................        0.078 ms |
+| GCC-PHAT XCorr..............        0.230 ms |
+| SRP Accumulation............        0.140 ms |
+| Peak Extraction + Mapping...        0.002 ms |
+| Freq at Peak................        0.320 ms |
+| Format DOA Angles...........        0.043 ms |
++--------------------------------------------------+
+| Full SSL Frame..............        0.812 ms |
++--------------------------------------------------+
++--------------------------------------------------+
+|           SST Stage Timing (avg / frame)         |
++--------------------------------------------------+
+| Frames profiled.............         1765 |
+| Track Management............        0.002 ms |
+| Predict.....................        0.001 ms |
+| Coherence...................        0.002 ms |
+| Mixture + Assignment........        0.010 ms |
+| Update......................        0.001 ms |
+| Activity + Classify.........        0.076 ms |
+| Transitions + Dynamic.......        0.002 ms |
+| Output Copy.................        0.001 ms |
++--------------------------------------------------+
+| Full SST Frame..............        0.095 ms |
++--------------------------------------------------+

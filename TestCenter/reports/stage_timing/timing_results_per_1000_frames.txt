@@ -1,0 +1,6 @@
+ODAS_TIMING version=base_bcb8454 module=ssl frames=1563 total_ms=777.391 avg_ms_per_frame=0.497371 ms_per_1000_frames=497.371
+ODAS_TIMING version=base_bcb8454 module=sst frames=1563 total_ms=20.310 avg_ms_per_frame=0.012994 ms_per_1000_frames=12.994
+ODAS_TIMING version=18a8a73 module=ssl frames=1563 total_ms=1392.130 avg_ms_per_frame=0.890678 ms_per_1000_frames=890.678
+ODAS_TIMING version=18a8a73 module=sst frames=1563 total_ms=23.231 avg_ms_per_frame=0.014863 ms_per_1000_frames=14.863
+ODAS_TIMING version=93a1b81 module=ssl frames=1469 total_ms=1354.670 avg_ms_per_frame=0.922171 ms_per_1000_frames=922.171
+ODAS_TIMING version=93a1b81 module=sst frames=1469 total_ms=130.234 avg_ms_per_frame=0.088655 ms_per_1000_frames=88.655

@@ -1,0 +1,7 @@
+**/build/
+**/live_timing_runs/
+**/ClassifierLogs/
+**/__pycache__/
+**/*.py[cod]
+reports/concurrent_stress/stage_runs/*.log
+reports/stage_timing/stage_runs/*.log

@@ -1,0 +1,103 @@
+# Editor / IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# ── Runtime data (never commit) ──────────────────────────────────────────────
+# Raw audio captures and live session recordings
+*.raw
+liveSession_*/
+
+# ODAS classifier output (generated at runtime)
+ClassifierLogs/
+*.bin
+
+# ── Model weights ─────────────────────────────────────────────────────────────
+# yamnet_core.tflite is 14 MB — tracked via Git LFS (see .gitattributes) OR
+# downloaded by scripts/download_models.sh.
+# Uncomment the next line if you are NOT using Git LFS:
+# models/*.tflite
+
+# ── Backup / scratch directories ─────────────────────────────────────────────
+backup_*/
+*_backup_*/
+
+# ── Debug artefacts ───────────────────────────────────────────────────────────
+build/debug_crash.sh
+build/run_gdb.sh
+build/gdb_commands.txt
+build/postfiltered.raw
+build/seperated.raw
+
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Linker files
+*.ilk
+
+# Debugger Files
+*.pdb
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+*.so.*
+# Exception: bundled pre-built TFLite shared libraries
+!third_party/tflite/**/*.so
+!third_party/tflite/**/*.so.*
+
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Build directories
+build/
+Build/
+build-*/
+
+# CMake generated files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+install_manifest.txt 
+compile_commands.json
+
+# Temporary files
+*.tmp 
+*.log 
+*.bak 
+*.swp 
+
+# vcpkg
+vcpkg_installed/
+
+# debug information files
+*.dwo
+
+# test output & cache
+Testing/
+.cache/

@@ -1,0 +1,44 @@
+  YAMNet output classes (from model): 3
+  YAMNet class names loaded: 3
+  YAMNet output classes (from model): 3
+  YAMNet class names loaded: 3
+  YAMNet output classes (from model): 3
+  YAMNet class names loaded: 3
+| + Loaded Classifier................. [Done] |
+
+Bandpass updated: 0-8000 Hz (0-128 bins)
+push same:Bandpass updated: 0-8000 Hz
+
+Bandpass updated: 0-8000 Hz (0-128 bins)
+push same:Bandpass updated: 0-8000 Hz
+
+Bandpass updated: 0-8000 Hz (0-128 bins)
+push same:Bandpass updated: 0-8000 Hz
++--------------------------------------------------+
+|           SSL Stage Timing (avg / frame)         |
++--------------------------------------------------+
+| Frames profiled.............         1735 |
+| Pre-XCorr...................        0.091 ms |
+| GCC-PHAT XCorr..............        0.276 ms |
+| SRP Accumulation............        0.239 ms |
+| Peak Extraction + Mapping...        0.002 ms |
+| Freq at Peak................        0.341 ms |
+| Format DOA Angles...........        0.045 ms |
++--------------------------------------------------+
+| Full SSL Frame..............        0.994 ms |
++--------------------------------------------------+
++--------------------------------------------------+
+|           SST Stage Timing (avg / frame)         |
++--------------------------------------------------+
+| Frames profiled.............         1735 |
+| Track Management............        0.003 ms |
+| Predict.....................        0.000 ms |
+| Coherence...................        0.000 ms |
+| Mixture + Assignment........        0.007 ms |
+| Update......................        0.001 ms |
+| Activity + Classify.........        0.001 ms |
+| Transitions + Dynamic.......        0.001 ms |
+| Output Copy.................        0.001 ms |
++--------------------------------------------------+
+| Full SST Frame..............        0.015 ms |
++--------------------------------------------------+
