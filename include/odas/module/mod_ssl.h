@@ -5,6 +5,7 @@
 
     #include <stdlib.h>
     #include <string.h>
+    #include <sys/stat.h>
 
     #include "../general/mic.h"
     #include "../general/samplerate.h"
@@ -47,6 +48,10 @@
         unsigned int halfFrameSizeInterp;
         unsigned int interpRate;
         unsigned int nMatches;
+        char bandpassPath[256];
+        struct stat bandpassStat;
+        int bandpassError;
+        char bandpassRejected;
         
         float **spec_at_peak;
         
@@ -61,6 +66,7 @@
         freq2env_obj * freq2env;
         freq2freq_phasor_obj * freq2freq_phasor;
         freq2freq_product_obj * freq2freq_product;
+        freq2freq_bandpass_obj * freq2freq_bandpass;
         freq2freq_interpolate_obj * freq2freq_interpolate;
         freq2xcorr_obj * freq2xcorr;
         xcorr2xcorr_obj * xcorr2xcorr;
@@ -103,6 +109,7 @@
         unsigned int nRefinedLevels;
         unsigned int nThetas;
         float gainMin;
+        char bandpassPath[256];
 
     } mod_ssl_cfg;
 
@@ -111,6 +118,8 @@
     void mod_ssl_destroy(mod_ssl_obj * obj);
 
     int mod_ssl_process(mod_ssl_obj * obj);
+
+    int mod_ssl_reload_bandpass(mod_ssl_obj * obj);
 
     void mod_ssl_connect(mod_ssl_obj * obj, msg_spectra_obj * in, msg_chatak_id_obj* in1,msg_pots_obj * out);
 

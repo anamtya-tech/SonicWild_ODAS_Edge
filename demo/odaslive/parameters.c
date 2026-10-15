@@ -906,6 +906,10 @@
 
         cfg = mod_ssl_cfg_construct();
 
+        tmpString = parameters_lookup_string(fileConfig, "raw.bandpass");
+        snprintf(cfg->bandpassPath, sizeof(cfg->bandpassPath), "%s", tmpString);
+        free((void *) tmpString);
+
         // +----------------------------------------------------------+
         // | Number of channels                                       |
         // +----------------------------------------------------------+

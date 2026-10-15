@@ -281,6 +281,11 @@ target_include_directories(odas PRIVATE third_party/cJSON)
 target_include_directories(odas PRIVATE ${PROJECT_SOURCE_DIR}/include/yamnet)
 target_include_directories(odaslive PRIVATE ${PROJECT_SOURCE_DIR}/include/yamnet)
 
+enable_testing()
+add_executable(test_ssl_bandpass EXCLUDE_FROM_ALL tests/test_ssl_bandpass.c)
+target_link_libraries(test_ssl_bandpass odas)
+add_test(NAME ssl_bandpass COMMAND test_ssl_bandpass)
+
 
 
 if (NOT ODAS_DISABLE_INSTALL)

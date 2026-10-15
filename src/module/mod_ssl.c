@@ -1,6 +1,11 @@
 
     
     #include <module/mod_ssl.h>
+    #include <ctype.h>
+    #include <errno.h>
+    #include <limits.h>
+
+    #define MOD_SSL_MIN_HZ 1000U
 
         #include <stdio.h>
         #include <stdlib.h>
@@ -53,6 +58,136 @@
 
         }
 
+    static int mod_ssl_bandpass_error(mod_ssl_obj * obj, int error) {
+
+        if (obj->bandpassError != error) {
+            fprintf(stderr, "SSL: cannot read bandpass '%s': %s; keeping previous band\n",
+                    obj->bandpassPath, strerror(error));
+        }
+        obj->bandpassError = error;
+        return -1;
+
+    }
+
+    int mod_ssl_reload_bandpass(mod_ssl_obj * obj) {
+
+        struct stat state;
+        FILE * file;
+        char line[128];
+        unsigned int lowHz = 0;
+        unsigned int highHz = 0;
+        unsigned int seen = 0;
+        unsigned int lowCut;
+        unsigned int highCut;
+        unsigned int effectiveLowHz;
+        int valid = 1;
+        int error = 0;
+
+        if (stat(obj->bandpassPath, &state) != 0) {
+            return mod_ssl_bandpass_error(obj, errno);
+        }
+
+        if ((obj->bandpassError == 0) &&
+            (state.st_dev == obj->bandpassStat.st_dev) &&
+            (state.st_ino == obj->bandpassStat.st_ino) &&
+            (state.st_size == obj->bandpassStat.st_size) &&
+            (state.st_mtim.tv_sec == obj->bandpassStat.st_mtim.tv_sec) &&
+            (state.st_mtim.tv_nsec == obj->bandpassStat.st_mtim.tv_nsec)) {
+            return obj->bandpassRejected ? -1 : 0;
+        }
+
+        file = fopen(obj->bandpassPath, "r");
+        if (file == NULL) {
+            return mod_ssl_bandpass_error(obj, errno);
+        }
+        if (fstat(fileno(file), &state) != 0) {
+            error = errno;
+            fclose(file);
+            return mod_ssl_bandpass_error(obj, error);
+        }
+
+        while (fgets(line, sizeof(line), file) != NULL) {
+            char * key = line;
+            char * separator;
+            char * value;
+            char * end;
+            unsigned long hz;
+            unsigned int field;
+
+            while (isspace((unsigned char) *key)) key++;
+            if (*key == '\0') continue;
+            separator = strchr(key, '=');
+            if (separator == NULL) {
+                valid = 0;
+                break;
+            }
+            end = separator;
+            while ((end > key) && isspace((unsigned char) end[-1])) end--;
+            *end = '\0';
+            field = (strcmp(key, "lowHz") == 0) ? 1 :
+                    (strcmp(key, "highHz") == 0) ? 2 : 0;
+            value = separator + 1;
+            while (isspace((unsigned char) *value)) value++;
+            errno = 0;
+            hz = strtoul(value, &end, 10);
+            if (!isdigit((unsigned char) *value) || (errno != 0) || (hz > UINT_MAX)) {
+                valid = 0;
+                break;
+            }
+            while (isspace((unsigned char) *end)) end++;
+            if ((*end != '\0') || (field == 0) || ((seen & field) != 0)) {
+                valid = 0;
+                break;
+            }
+            if (field == 1) lowHz = (unsigned int) hz;
+            if (field == 2) highHz = (unsigned int) hz;
+            seen |= field;
+        }
+        if (ferror(file)) error = errno ? errno : EIO;
+        if ((fclose(file) != 0) && (error == 0)) error = errno;
+        if (error != 0) {
+            return mod_ssl_bandpass_error(obj, error);
+        }
+
+        obj->bandpassStat = state;
+        obj->bandpassError = 0;
+        obj->bandpassRejected = 1;
+        if (!valid || (seen != 3) || (obj->fS == 0) ||
+            (lowHz >= highHz) || (highHz > obj->fS / 2)) {
+            fprintf(stderr, "SSL: invalid bandpass '%s': expected integer "
+                    "0 <= lowHz < highHz <= %u; keeping previous band\n",
+                    obj->bandpassPath, obj->fS / 2);
+            return -1;
+        }
+
+        effectiveLowHz = (lowHz < MOD_SSL_MIN_HZ) ? MOD_SSL_MIN_HZ : lowHz;
+        /* Round inward so only bin centers within the effective band vote. */
+        lowCut = (unsigned int) (((unsigned long long) effectiveLowHz * obj->frameSize + obj->fS - 1) / obj->fS);
+        highCut = (unsigned int) (((unsigned long long) highHz * obj->frameSize) / obj->fS);
+        if (highHz <= MOD_SSL_MIN_HZ) {
+            lowCut = highCut + 1;
+        }
+        else if (lowCut > highCut) {
+            fprintf(stderr, "SSL: bandpass '%s' contains no FFT bins; keeping previous band\n",
+                    obj->bandpassPath);
+            return -1;
+        }
+
+        obj->freq2freq_bandpass->lowCut = lowCut;
+        obj->freq2freq_bandpass->highCut = highCut;
+        obj->bandpassRejected = 0;
+        if (lowCut > highCut) {
+            printf("SSL: bandpass updated: %u-%u Hz; localization disabled "
+                   "(upper cutoff <= %u Hz minimum)\n", lowHz, highHz, MOD_SSL_MIN_HZ);
+        }
+        else {
+            printf("SSL: bandpass updated: requested %u-%u Hz, effective %u-%u Hz (%u-%u bins)\n",
+                   lowHz, highHz, effectiveLowHz, highHz, lowCut, highCut);
+        }
+        return 0;
+
+    }
+
     mod_ssl_obj * mod_ssl_construct(const mod_ssl_cfg * mod_ssl_config, const msg_spectra_cfg * msg_spectra_config, const msg_pots_cfg * msg_pots_config) {
 
         mod_ssl_obj * obj;
@@ -67,12 +202,21 @@
         obj->nPairs = obj->nChannels * (obj->nChannels - 1) / 2;
         obj->nPots = msg_pots_config->nPots;
         obj->nLevels = mod_ssl_config->nLevels;
-        obj->fS = mod_ssl_config->fS;
+        obj->fS = msg_spectra_config->fS;
         obj->frameSize = 2 * (msg_spectra_config->halfFrameSize - 1);
         obj->halfFrameSize = msg_spectra_config->halfFrameSize; 
         obj->frameSizeInterp = obj->frameSize * mod_ssl_config->interpRate;
         obj->halfFrameSizeInterp = (obj->halfFrameSize - 1) * mod_ssl_config->interpRate + 1;
         obj->interpRate = mod_ssl_config->interpRate;
+        snprintf(obj->bandpassPath, sizeof(obj->bandpassPath), "%s", mod_ssl_config->bandpassPath);
+        memset(&obj->bandpassStat, 0, sizeof(obj->bandpassStat));
+        obj->bandpassError = 0;
+        obj->bandpassRejected = 0;
+        obj->freq2freq_bandpass = freq2freq_bandpass_construct_zero(obj->halfFrameSize, 0, obj->halfFrameSize - 1);
+        if (mod_ssl_reload_bandpass(obj) != 0) {
+            fprintf(stderr, "SSL: cannot initialize localization band; aborting\n");
+            exit(EXIT_FAILURE);
+        }
 
         obj->scans = scanning_init_scans(mod_ssl_config->mics, 
                                          mod_ssl_config->spatialfilters,
@@ -165,6 +309,7 @@
 
         freq2freq_phasor_destroy(obj->freq2freq_phasor);
         freq2freq_product_destroy(obj->freq2freq_product);
+        freq2freq_bandpass_destroy(obj->freq2freq_bandpass);
         freq2freq_interpolate_destroy(obj->freq2freq_interpolate);
         freqs_destroy(obj->phasors);
         freqs_destroy(obj->products);
@@ -238,28 +383,10 @@
                                           obj->scans->pairs,
                                           obj->products);        
 
-                /* ── Option 3: HPF mask on SSL cross-spectrum ───────────────
-                 * Zero cross-spectral bins below freqMinSSL Hz so that only
-                 * the localizable (above-aliasing) content votes in SRP-PHAT.
-                 * SSS beamformer and .bin training output use obj->in->freqs
-                 * directly and are completely unaffected by this mask.
-                 * 4-mic square array: max spacing 64mm → aliasing at 2680 Hz.
-                 * freqMinBin = freqMinSSL / (fS / frameSize)
-                 *            = 1200 / (16000/512) = 38.4 → bin 38
-                 */
-                {
-                    float freqMinSSL = 1200.0f;
-                    unsigned int freqMinBin = (unsigned int)
-                        (freqMinSSL * (float)obj->halfFrameSize / ((float)obj->fS / 2.0f));
-                    unsigned int iSSLSig, iSSLBin;
-                    for (iSSLSig = 0; iSSLSig < obj->products->nSignals; iSSLSig++) {
-                        for (iSSLBin = 0; iSSLBin < freqMinBin; iSSLBin++) {
-                            obj->products->array[iSSLSig][iSSLBin * 2 + 0] = 0.0f;
-                            obj->products->array[iSSLSig][iSSLBin * 2 + 1] = 0.0f;
-                        }
-                    }
-                }
-                /* ─────────────────────────────────────────────────────────── */
+                mod_ssl_reload_bandpass(obj);
+                freq2freq_bandpass_process(obj->freq2freq_bandpass,
+                                          obj->products,
+                                          obj->products);
 
                 freq2freq_interpolate_process(obj->freq2freq_interpolate,
                                               obj->products,
@@ -277,6 +404,16 @@
                                    obj->productsInterp, 
                                    obj->scans->pairs,
                                    obj->xcorrs);
+
+                if (obj->freq2freq_bandpass->lowCut > obj->freq2freq_bandpass->highCut) {
+                    memset(obj->pots->array, 0, sizeof(float) * obj->pots->nPots * 4);
+                    for (iPot = 0; iPot < obj->pots->nPots; iPot++) {
+                        memset(obj->pots->spec_at_peak[iPot], 0, sizeof(float) * obj->halfFrameSize);
+                    }
+                    pots_copy(obj->out->pots, obj->pots);
+                    obj->out->timeStamp = obj->in->timeStamp;
+                    return 0;
+                }
 
                 if (obj->profile_enabled == 0x01) {
                     clock_gettime(CLOCK_MONOTONIC, &t_end);
@@ -490,6 +627,8 @@
         cfg = (mod_ssl_cfg *) malloc(sizeof(mod_ssl_cfg));
 
         cfg->fS = 0;
+        snprintf(cfg->bandpassPath, sizeof(cfg->bandpassPath),
+                 "/home/chatak/ChatakGUI/config/bandpass.cfg");
 
         cfg->mics = (mics_obj *) NULL;
         cfg->samplerate = (samplerate_obj *) NULL;
@@ -569,5 +708,6 @@
         printf("nRefinedLevels = %u\n", cfg->nRefinedLevels);
         printf("nThetas = %u\n", cfg->nThetas);
         printf("gainMin = %f\n", cfg->gainMin);
+        printf("bandpassPath = %s\n", cfg->bandpassPath);
 
     }

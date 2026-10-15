@@ -38,6 +38,68 @@ This writes `~/sodas/local_socket.cfg` (and `local_socket1.cfg`,
 
 ---
 
+## Dynamic localization band (`raw.bandpass`)
+
+```cfg
+raw: {
+    bandpass = "/home/chatak/ChatakGUI/config/bandpass.cfg";
+};
+```
+
+The resampler and SSL use this same file. Its format is two integer cutoffs in Hz:
+
+```ini
+lowHz=1000
+highHz=2000
+```
+
+SSL loads the file at construction and checks for changes on each enabled audio
+frame. Nanosecond modification times and file identity detect rapid edits and
+atomic replacements; replacing a temporary file with `rename`/`os.replace` is
+recommended to avoid reading a partially written configuration.
+
+SSL enforces a fixed **1000 Hz minimum**, regardless of the user's lower cutoff:
+`effectiveLowHz = max(lowHz, 1000)`. This replaces the older approximately 1200 Hz
+fixed mask while retaining low-frequency rejection. After PHAT and cross-spectrum calculation, SSL zeros both real and imaginary
+components outside the selected band, before interpolation/correlation. Bin
+centers must lie within the effective inclusive Hz limits: lower bin = `ceil(effectiveLowHz*N/fS)`,
+upper bin = `floor(highHz*N/fS)`, using the SSL FFT size and its input spectra's
+sample rate. At 16 kHz with a 512-point FFT, 1000-2000 Hz keeps bins 32-64.
+Selecting 0-2000 Hz also keeps bins 32-64; selecting 1500-2000 Hz keeps bins 48-64.
+If `highHz <= 1000`, SSL accepts the setting but zeros all localization bins
+and outputs zero positions, scores and peak spectra. This does not immediately
+clear SST tracks or classification history. Localization resumes on a subsequent
+valid band with usable frequencies above the minimum.
+
+Valid settings require `0 <= lowHz < highHz <= fS/2`. Bands above the minimum
+must contain at least one FFT bin.
+Missing, malformed, duplicate or out-of-range settings are reported on stderr.
+SSL refuses startup without a valid initial band; a failed live update retains
+the last valid band. Successful loads print the Hz and bin limits.
+
+This mask affects only localization cross-spectra, not the input spectra used
+for beamformed spectra, separation or classification. Those paths still receive
+the resampler-filtered audio. STFT/SST objects are not rebuilt; existing queues,
+tracking and classification histories are not flushed. SSL and the resampler
+reload independently, so this is not a frame-synchronized band switch.
+The resampler's existing startup and whole-second update-detection behavior is
+unchanged by this SSL patch.
+
+### Regression test
+
+```bash
+cmake -S . -B build
+cmake --build build --target odaslive test_ssl_bandpass -j2
+ctest --test-dir build -R '^ssl_bandpass$' --output-on-failure
+```
+
+The test exercises the SSL frame path, both mask edges, startup-file loading,
+rapid updates, atomic replacement, minimum-frequency enforcement, disabled-band
+output clearing/recovery, invalid-update retention and unchanged input
+spectra. It does not validate acoustic direction accuracy.
+
+---
+
 ## Custom `sst` config keys
 
 These keys go inside the `sst { ... }` block of your `.cfg` file.
