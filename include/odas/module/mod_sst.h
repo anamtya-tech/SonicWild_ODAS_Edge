@@ -91,6 +91,27 @@ typedef struct sst_event_t {
     float max_conf;   /* Best single-hop top-1 confidence for the winner */
 } sst_event_t;
 
+typedef struct sst_target_threshold_t {
+    char class_name[256];
+    float min_confidence;
+} sst_target_threshold_t;
+
+typedef struct sst_alarm_result_t {
+    int triggered;
+    int votes;
+    char class_name[256];
+    float avg_confidence;
+    float min_confidence;
+} sst_alarm_result_t;
+
+int sst_evaluate_target_alarm(const char *const *class_names,
+                              const float *confidences,
+                              unsigned int n_hops,
+                              const sst_target_threshold_t *thresholds,
+                              unsigned int n_thresholds,
+                              unsigned int min_votes,
+                              sst_alarm_result_t *result);
+
 typedef struct mod_sst_obj {
 
     unsigned int nPots;
@@ -206,17 +227,17 @@ typedef struct mod_sst_obj {
      *       Python simulator can stitch 6 hops (~3s) via
      *       AudioReconstructor.reconstruct_multi_frame() for human review.
      *
-     * min_event_votes — Noise gate for JSON emission. An event entry is only
-     *   written to the session JSONL when this many of the last ROLLING_HOPS (6)
-     *   YAMNet top-1 predictions agree on the same class.
-     *   Range: 1–6. Default: 4 (≥4/6 = robust majority).
-     *   Tip: use 3 in noisy outdoor environments, 5–6 for strict monitoring.
+     * min_event_votes — Minimum recent top-1 predictions that must pass the
+     *   matching target's confidence threshold before target class metadata
+     *   is exposed to live track consumers. Range: 1–6, default: 5.
      *
      * last_patch_path — Per-track path of the most recently written .bin
      *   sidecar. Empty string when sim_mode==0 or no hop classified yet.
      */
     int   sim_mode;
     int   min_event_votes;
+    unsigned int n_target_thresholds;
+    sst_target_threshold_t *target_thresholds;
     char **last_patch_path;        /* [iTrack] → malloc'd char[512] */
 
     char sstParametersPath[512];
@@ -285,15 +306,13 @@ typedef struct mod_sst_cfg {
      *   0: No .bin files written. The JSON spectra_file field is empty string.
      *      Use this on Pi to avoid unnecessary disk writes.
      *
-     * min_event_votes — Noise gate threshold. Only emit an event to the
-     *   session JSONL when this many of the last ROLLING_HOPS=6 YAMNet hops
-     *   return the same top-1 class. Range: 1–6. Default: 4.
-     *   - 4/6: majority vote (~67%%) — recommended for outdoor wildlife.
-     *   - 3/6: lenient — use when vocalisations are short or intermittent.
-     *   - 6/6: strict — all hops agree; very few false positives.
+     * min_event_votes — Minimum rolling top-1 hits required for a configured
+     *   target alarm. Range: 1–6. Default: 5.
      */
     int sim_mode;          /* 0 = Pi (no .bin), 1 = Simulator (write .bin) */
-    int min_event_votes;   /* 1–6, default 4 */
+    int min_event_votes;   /* 1–6, default 5 */
+    unsigned int n_target_thresholds;
+    sst_target_threshold_t *target_thresholds;
 
     char sstParametersPath[512];
 

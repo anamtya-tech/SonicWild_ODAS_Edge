@@ -122,17 +122,38 @@ pre-recorded `.raw` files.
 
 ```cfg
 sst: {
-    min_event_votes = 4;   # code default: 4
+    min_event_votes = 5;   # requires target_thresholds for the alarm gate
 };
 ```
 
-Number of YAMNet inference frames that must agree on the top-K class before a
-track-end event is emitted.  Increasing this reduces false-positive events at
-the cost of missing short sounds.
+Minimum number of recent YAMNet top-1 predictions that must pass a target's
+confidence threshold before its class is exposed by live tracked output. It
+counts hits among up to the latest six inference hops; those hops overlap and
+are not independent observations.
 
 Notes:
-- Runtime templates may intentionally set `min_event_votes = 1` for dataset collection.
-- Valid range is `1..6`; invalid values fall back to `4`.
+- This gate is active only when `target_thresholds` is configured.
+- Raw classifier predictions and top-K history remain in classifier logs.
+- Valid range is `1..6`; invalid or missing values fall back to `5`.
+
+### `target_thresholds`
+
+```cfg
+sst: {
+    min_event_votes = 5;
+    target_thresholds = (
+        { class = "Elephant"; min_confidence = 0.85; },
+        { class = "Frog";     min_confidence = 0.85; }
+    );
+};
+```
+
+Each class must match a name in the selected model's `yamnet_class_map.csv`.
+An alarm is exposed only when the target is top-1 and meets its score threshold
+for at least `min_event_votes` of the latest six hops. The `0.85` values are
+starting points, not calibrated probabilities or guaranteed FP/TP rates; tune
+them on validation recordings. YAMNet predictions do not modify ODAS
+track-association scores.
 
 ---
 

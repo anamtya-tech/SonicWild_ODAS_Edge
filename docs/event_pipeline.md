@@ -94,23 +94,32 @@ hop N fires every 48 frames (≈ 384 ms)
 6 hops span ≈ 2.3 s of audio context
 ```
 
-### D4 — Event gate: `min_event_votes`
+### D4 — Target alarm gate: `target_thresholds` and `min_event_votes`
 
-A JSON event is only written when **both** conditions hold:
+Raw per-hop predictions, top-K history, and diagnostic `event_*` fields remain
+available in classifier logs. They are intentionally not suppressed, so data
+collection and review continue to see uncertain predictions.
 
-1. The circular buffer is fully warm (`topk_count == ROLLING_HOPS == 6`).
-2. The mode (most frequent top-1 class) across the 6 hops has at least
-   `min_event_votes` agreeing hops (default **4 of 6**).
+For live tracked output, configure `sst.target_thresholds`. Each entry names a
+YAMNet class and its minimum top-1 score. A class is exposed as an alarm only
+when it passes its score threshold on at least `min_event_votes` of the latest
+six hops. The window need not be full: until enough qualifying hops exist,
+tracked-output `class` is empty. With no `target_thresholds`, prior raw
+top-1 tracked output is preserved.
 
-The `compute_event()` helper computes: mode class ID, vote count, and mean
-confidence of the agreeing hops only.
+The separate `compute_event()` helper still summarizes the broader top-K pool
+for diagnostics; its `event_votes` is not the alarm gate.
+
+The shipped Elephant/Frog runtime and simulator configs use a 0.85 score floor
+and require 5 of 6 hops. YAMNet predictions do not boost ODAS track-association
+scores; classification is kept separate from spatial tracking.
 
 ```
-votes required  | behaviour
+votes required  | alarm behaviour
 ----------------|-------------------------------------------------
-1               | fires on every full buffer (useful for tuning)
-4 (default)     | majority — filters transient noise well
-6               | unanimous — only the most stable events fire
+1               | one threshold-passing hop can expose a target
+5 (shipped config) | requires strong, repeated evidence in the recent window
+6               | all six latest hops must pass the target threshold
 ```
 
 ### D5 — `.bin` spectra sidecar (`sim_mode = 1`)
@@ -184,13 +193,13 @@ evaluation.  The Python parser uses `timeStamp × 0.008` (hop counter ×
 | Function | Change |
 |---|---|
 | `mod_sst_construct` | Alloc `topk_history[nTracks][ROLLING_HOPS]`, `topk_head[]`, `topk_count[]`; copy `sim_mode`, `min_event_votes` from config (with range validation); alloc `last_patch_path[nTracks][512]`; resolve `classifier_log_dir` to **absolute path** via `getcwd()` |
-| `mod_sst_cfg_construct` | Default `sim_mode = 0`, `min_event_votes = 4` |
+| `mod_sst_cfg_construct` | Default `sim_mode = 0`, `min_event_votes = 5` |
 | `mod_sst_destroy` | Free `topk_history`, `topk_head`, `topk_count`, `last_patch_path` |
 | `reset_track_slot` | Clear `topk_head`, `topk_count`, `last_patch_path[i][0] = '\0'` |
 | `push_pot_to_track_buffer` (pot assignment) | 20% semantic boost when top-1 class matches track history |
 | `push_pot_to_track_buffer` (hop trigger) | **Fixed cadence**: `(count − 96) % 48 == 0`; call `yamnet_classify_patch_topk()`; write to circular buffer; write `.bin` sidecar when `sim_mode == 1` |
 | `compute_event` *(new)* | Reads circular buffer; finds mode top-1 class; returns `sst_event_t{class_id, votes, avg_conf, max_conf}` — `max_conf` is the peak single-hop top-1 confidence for the winner |
-| `dump_track_buffers_to_json` | **Gate**: skip track if `topk_count < ROLLING_HOPS` or `ev.votes < min_event_votes`; emit `event_class_id`, `event_class_name`, `event_votes`, `event_avg_confidence`, **`event_max_confidence`**, `event_candidates`, `spectra_file` (absolute path), `topk_history`; **removed** legacy `bins[257]` and `fingerprint` fields |
+| `dump_track_buffers_to_json` | Retains raw diagnostic `event_class_id`, `event_class_name`, vote/confidence fields, candidates, and history; adds target-alarm status and qualified class/votes/confidence fields |
 | *call site* (D6 gate) | Wrapped in `if (timeStamp % ROLLING_HOPS == 0)` — JSON emits at 48 ms cadence, 1:1 with YAMNet evaluations |
 
 ### Runtime config templates — `config/runtime/`
@@ -199,7 +208,11 @@ Both `local_socket.cfg` and `local_socket1.cfg` gained two new `sst` keys:
 
 ```
 sim_mode = 1;          # 0 = Pi, 1 = simulator (write .bin sidecars)
-min_event_votes = 4;   # 4 of 6 hops must agree before emitting event
+min_event_votes = 5;   # required only with configured target_thresholds
+target_thresholds = (
+    { class = "Elephant"; min_confidence = 0.85; },
+    { class = "Frog"; min_confidence = 0.85; }
+);
 ```
 
 ### Python simulator — external `anamtya-tech/simulator`
@@ -300,7 +313,7 @@ python3 scripts/vm_socket_emit.py --audio /path/to/render.raw --port 10000
 | Test | What it checks |
 |---|---|
 | Schema | `event_*` fields present; `bins`/`fingerprint` absent |
-| Vote gate | `event_votes ≥ min_event_votes` for every emitted entry |
+| Target alarm gate | Configured class score threshold and `min_event_votes` are required for tracked-output class metadata |
 | `.bin` sidecar | Each `spectra_file` loads as exactly 96×257 float32 |
 | Audio reconstruction | `reconstruct_from_spectra_file()` returns audio with `duration > 0` |
 | Analyzer parse | `_parse_odas_output()` populates all new keys in the detection dict |
@@ -312,12 +325,13 @@ python3 scripts/vm_socket_emit.py --audio /path/to/render.raw --port 10000
 | Setting | Pi / Edge | Simulator / Dev |
 |---|---|---|
 | `sim_mode` | `0` | `1` |
-| `min_event_votes` | `4` (recommended) | `1` for tuning, `4` for accuracy |
+| `min_event_votes` | `5` (default) | `1` for tuning, `5` for higher precision when `target_thresholds` is configured |
 | `.bin` files written | No | Yes — one per hop per track |
 | JSON size per event | Small (no spectra) | Small + path to `.bin` |
 
-> **Tip**: when tuning a new environment, set `min_event_votes = 1` to see all
-> hops in the log, then raise it once YAMNet confidence is stable.
+> **Tip**: raw inference hops remain in classifier logs. Use validation recordings
+> to tune target score thresholds and `min_event_votes`; lowering vote count alone
+> does not filter raw classifier diagnostics.
 
 ---
 

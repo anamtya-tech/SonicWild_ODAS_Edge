@@ -218,10 +218,13 @@ sst:
     # 1 = Simulator mode (writes 96×257 float32 .bin patch files per hop)
     sim_mode = 1;
 
-    # Minimum number of ROLLING_HOPS (out of 6) that must agree on the same
-    # top-1 YAMNet class before an event JSON entry is emitted.
-    # Range: 1–6. Default: 4  (majority of 6).
-    min_event_votes = 4;
+    # Require consistent, high-confidence Elephant/Frog predictions.
+    # Raw predictions remain in classifier logs for dataset collection.
+    min_event_votes = 5;
+    target_thresholds = (
+        { class = "Elephant"; min_confidence = 0.85; },
+        { class = "Frog";     min_confidence = 0.85; }
+    );
 
     # Parameters used by the Kalman filter only
 

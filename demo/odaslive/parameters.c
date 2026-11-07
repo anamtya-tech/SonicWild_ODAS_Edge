@@ -420,6 +420,77 @@
 
     }
 
+    static void parameters_sst_target_thresholds(const char *file, mod_sst_cfg *cfg) {
+
+        config_t config;
+        config_setting_t *setting;
+        int i;
+
+        config_init(&config);
+        if (!config_read_file(&config, file)) {
+            fprintf(stderr, "%s:%d - %s\n", config_error_file(&config),
+                    config_error_line(&config), config_error_text(&config));
+            config_destroy(&config);
+            exit(EXIT_FAILURE);
+        }
+
+        setting = config_lookup(&config, "sst.target_thresholds");
+        if (setting == NULL) {
+            config_destroy(&config);
+            return;
+        }
+        if ((config_setting_type(setting) != CONFIG_TYPE_LIST) &&
+            (config_setting_type(setting) != CONFIG_TYPE_ARRAY)) {
+            fprintf(stderr, "sst.target_thresholds must be a list of {class, min_confidence} groups\n");
+            config_destroy(&config);
+            exit(EXIT_FAILURE);
+        }
+
+        cfg->n_target_thresholds = (unsigned int) config_setting_length(setting);
+        if (cfg->n_target_thresholds > 0) {
+            cfg->target_thresholds = (sst_target_threshold_t *) calloc(
+                cfg->n_target_thresholds, sizeof(sst_target_threshold_t));
+            if (cfg->target_thresholds == NULL) {
+                fprintf(stderr, "Could not allocate sst.target_thresholds\n");
+                config_destroy(&config);
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        for (i = 0; i < (int) cfg->n_target_thresholds; i++) {
+            config_setting_t *entry = config_setting_get_elem(setting, i);
+            const char *class_name = NULL;
+            double min_confidence = 0.0;
+            unsigned int previous;
+
+            if ((entry == NULL) || (config_setting_type(entry) != CONFIG_TYPE_GROUP) ||
+                !config_setting_lookup_string(entry, "class", &class_name) ||
+                !config_setting_lookup_float(entry, "min_confidence", &min_confidence) ||
+                (class_name[0] == '\0') ||
+                (strlen(class_name) >= sizeof(cfg->target_thresholds[i].class_name)) ||
+                !(min_confidence >= 0.0 && min_confidence <= 1.0)) {
+                fprintf(stderr, "Invalid sst.target_thresholds[%d]\n", i);
+                config_destroy(&config);
+                exit(EXIT_FAILURE);
+            }
+
+            for (previous = 0; previous < (unsigned int) i; previous++) {
+                if (strcmp(class_name, cfg->target_thresholds[previous].class_name) == 0) {
+                    fprintf(stderr, "Duplicate class '%s' in sst.target_thresholds\n", class_name);
+                    config_destroy(&config);
+                    exit(EXIT_FAILURE);
+                }
+            }
+
+            snprintf(cfg->target_thresholds[i].class_name,
+                     sizeof(cfg->target_thresholds[i].class_name), "%s", class_name);
+            cfg->target_thresholds[i].min_confidence = (float) min_confidence;
+        }
+
+        config_destroy(&config);
+
+    }
+
     src_hops_cfg * parameters_src_hops_mics_config(const char * fileConfig) {
 
         src_hops_cfg * cfg;
@@ -1555,15 +1626,13 @@
             }
 
         // +----------------------------------------------------------+
-        // | Minimum event votes (1–6, default 4)                    |
-        // | Number of ROLLING_HOPS hops that must agree on the      |
-        // | top-1 class before the JSON event is emitted.           |
+        // | Minimum target alarm votes (1–6, default 5)             |
         // +----------------------------------------------------------+
 
-            cfg->min_event_votes = parameters_lookup_int_default(fileConfig, "sst.min_event_votes", 4);
+            cfg->min_event_votes = parameters_lookup_int_default(fileConfig, "sst.min_event_votes", 5);
             if (cfg->min_event_votes < 1 || cfg->min_event_votes > 6) {
-                printf("sst.min_event_votes: Invalid value (use 1–6). Defaulting to 4.\n");
-                cfg->min_event_votes = 4;
+                printf("sst.min_event_votes: Invalid value (use 1–6). Defaulting to 5.\n");
+                cfg->min_event_votes = 5;
             }
 
         // +----------------------------------------------------------+
@@ -1579,6 +1648,8 @@
                 parameters_apply_sst_overrides(cfg, sstParametersPath);
                 free((void *) sstParametersPath);
             }
+
+            parameters_sst_target_thresholds(fileConfig, cfg);
 
         return cfg;
 

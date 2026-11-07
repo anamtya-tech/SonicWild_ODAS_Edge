@@ -9,6 +9,68 @@
     #include <string.h>
     #include <time.h>
 
+    static int mod_sst_track_alarm(mod_sst_obj *obj,
+                                   unsigned int iTrack,
+                                   sst_alarm_result_t *result);
+
+    int sst_evaluate_target_alarm(const char *const *class_names,
+                                  const float *confidences,
+                                  unsigned int n_hops,
+                                  const sst_target_threshold_t *thresholds,
+                                  unsigned int n_thresholds,
+                                  unsigned int min_votes,
+                                  sst_alarm_result_t *result) {
+
+        unsigned int iTarget;
+        int best_votes = 0;
+        float best_avg = -1.0f;
+
+        if (result == NULL || (n_hops > 0 && (class_names == NULL || confidences == NULL)) ||
+            (n_thresholds > 0 && thresholds == NULL) ||
+            n_hops > ROLLING_HOPS || min_votes < 1 || min_votes > ROLLING_HOPS) {
+            return -1;
+        }
+
+        memset(result, 0, sizeof(*result));
+        for (iTarget = 0; iTarget < n_thresholds; iTarget++) {
+            unsigned int hop;
+            int votes = 0;
+            float confidence_sum = 0.0f;
+
+            if (thresholds[iTarget].class_name[0] == '\0' ||
+                !(thresholds[iTarget].min_confidence >= 0.0f &&
+                  thresholds[iTarget].min_confidence <= 1.0f)) {
+                return -1;
+            }
+
+            for (hop = 0; hop < n_hops; hop++) {
+                if (class_names[hop] != NULL &&
+                    strcmp(class_names[hop], thresholds[iTarget].class_name) == 0 &&
+                    confidences[hop] >= thresholds[iTarget].min_confidence) {
+                    votes++;
+                    confidence_sum += confidences[hop];
+                }
+            }
+
+            if (votes >= (int) min_votes) {
+                float avg = confidence_sum / (float) votes;
+                if (votes > best_votes || (votes == best_votes && avg > best_avg)) {
+                    result->triggered = 1;
+                    result->votes = votes;
+                    result->avg_confidence = avg;
+                    result->min_confidence = thresholds[iTarget].min_confidence;
+                    snprintf(result->class_name, sizeof(result->class_name), "%s",
+                             thresholds[iTarget].class_name);
+                    best_votes = votes;
+                    best_avg = avg;
+                }
+            }
+        }
+
+        return result->triggered;
+
+    }
+
     #define NBINS 10
 
     unsigned long long session_start = 0;
@@ -588,7 +650,23 @@
         obj->sim_mode = mod_sst_config->sim_mode;
         obj->min_event_votes = (mod_sst_config->min_event_votes >= 1 &&
                                 mod_sst_config->min_event_votes <= ROLLING_HOPS)
-                               ? mod_sst_config->min_event_votes : 4;
+                               ? mod_sst_config->min_event_votes : 5;
+        obj->n_target_thresholds = mod_sst_config->n_target_thresholds;
+        obj->target_thresholds = NULL;
+        if (obj->n_target_thresholds > 0) {
+            if (mod_sst_config->target_thresholds == NULL) {
+                fprintf(stderr, "SST: target threshold count is nonzero but no thresholds were provided\n");
+                exit(EXIT_FAILURE);
+            }
+            obj->target_thresholds = (sst_target_threshold_t *) malloc(
+                sizeof(sst_target_threshold_t) * obj->n_target_thresholds);
+            if (obj->target_thresholds == NULL) {
+                fprintf(stderr, "SST: could not allocate target thresholds\n");
+                exit(EXIT_FAILURE);
+            }
+            memcpy(obj->target_thresholds, mod_sst_config->target_thresholds,
+                   sizeof(sst_target_threshold_t) * obj->n_target_thresholds);
+        }
 
         /* Per-track .bin sidecar path — 512-byte buffer per track, no truncation risk */
         obj->last_patch_path = (char **) malloc(sizeof(char *) * obj->nTracksMax);
@@ -872,6 +950,25 @@
             mod_sst_apply_live_overrides(obj, obj->sstParametersPath);
         }
 
+        for (iTrackMax = 0; iTrackMax < obj->n_target_thresholds; iTrackMax++) {
+            int class_id;
+            int class_count = yamnet_num_classes(obj->yamnet);
+            int found = 0;
+            for (class_id = 0; class_id < class_count; class_id++) {
+                const char *class_name = yamnet_class_name_from_id(obj->yamnet, class_id);
+                if (class_name != NULL &&
+                    strcmp(class_name, obj->target_thresholds[iTrackMax].class_name) == 0) {
+                    found = 1;
+                    break;
+                }
+            }
+            if (!found) {
+                fprintf(stderr, "SST: configured target class '%s' is absent from YAMNet class map\n",
+                        obj->target_thresholds[iTrackMax].class_name);
+                exit(EXIT_FAILURE);
+            }
+        }
+
         return obj;
 
     }
@@ -947,6 +1044,7 @@ void mod_sst_destroy(mod_sst_obj * obj) {
             }
             free((void *) obj->last_patch_path);
         }
+        free((void *) obj->target_thresholds);
 
         if (obj->kalman2kalman_prob != NULL) {
             kalman2kalman_destroy(obj->kalman2kalman_prob);
@@ -1473,35 +1571,6 @@ static void classify_track_hop(mod_sst_obj *obj, unsigned int iTrack,
                         if (obj->ids[iTrack] != 0 && (obj->type[iTrack] == 'P' || obj->type[iTrack] == 'A')) {
                             float score = obj->coherences[obj->nTracks]->array[iPot * obj->nTracksMax + iTrack];
                             
-                            // ===============================================================
-                            // SEMANTIC BOOST: Apply multiplier if Top-K contains animal class
-                            // ===============================================================
-                            if (obj->topk_count[iTrack] > 0) {
-                                // Get most recent Top-K prediction
-                                int recent_hop = (obj->topk_head[iTrack] + ROLLING_HOPS - 1) % ROLLING_HOPS;
-                                topk_hop_t *recent = &obj->topk_history[iTrack][recent_hop];
-                                
-                                // Check if any of Top-K contains target animal classes
-                                // Example: Dog=74, Cat=76, Bird=397, Elephant=359, etc.
-                                const int target_classes[] = {74, 76, 397, 359, 388, 89};  // Configurable
-                                const int n_targets = 6;
-                                const float confidence_thresh = 0.05f;  // Minimum confidence
-                                const float semantic_boost = 1.2f;      // 20% boost
-                                
-                                for (int k = 0; k < TOPK; k++) {
-                                    if (recent->confidences[k] < confidence_thresh) break;
-                                    
-                                    for (int t = 0; t < n_targets; t++) {
-                                        if (recent->class_ids[k] == target_classes[t]) {
-                                            score *= semantic_boost;
-                                            goto boost_applied;  // Apply boost only once per track
-                                        }
-                                    }
-                                }
-                                boost_applied: ;
-                            }
-                            // ===============================================================
-                            
                             if (score > bestScore) {
                                 bestScore = score;
                                 bestTrack = iTrack;
@@ -1992,12 +2061,28 @@ static void classify_track_hop(mod_sst_obj *obj, unsigned int iTrack,
                             obj->out->tracks->ids[iTrackMax] = obj->ids[iTrackMax];
                             strcpy(obj->out->tracks->tags[iTrackMax],obj->tags[iTrackMax]);
 
-                            /* Propagate YAMNet top-1 classification to tracks message */
-                            if (obj->last_class_id[iTrackMax] != -1 && obj->yamnet) {
+                            /* With configured target thresholds, expose only qualified alarms. */
+                            if (obj->n_target_thresholds > 0) {
+                                sst_alarm_result_t alarm = {0};
+                                int alarm_status = mod_sst_track_alarm(obj, iTrackMax, &alarm);
+                                if (alarm_status < 0) {
+                                    fprintf(stderr, "SST: failed to evaluate target alarm for track %llu\n",
+                                            obj->ids[iTrackMax]);
+                                    strcpy(obj->out->tracks->class_name[iTrackMax], "");
+                                    obj->out->tracks->class_conf[iTrackMax] = 0.0f;
+                                } else if (alarm.triggered) {
+                                    strncpy(obj->out->tracks->class_name[iTrackMax],
+                                            alarm.class_name,
+                                            255);
+                                    obj->out->tracks->class_name[iTrackMax][255] = '\0';
+                                    obj->out->tracks->class_conf[iTrackMax] = alarm.avg_confidence;
+                                } else {
+                                    strcpy(obj->out->tracks->class_name[iTrackMax], "");
+                                    obj->out->tracks->class_conf[iTrackMax] = 0.0f;
+                                }
+                            } else if (obj->last_class_id[iTrackMax] != -1 && obj->yamnet) {
                                 const char *cname = yamnet_class_name_from_id(obj->yamnet, obj->last_class_id[iTrackMax]);
-                                strncpy(obj->out->tracks->class_name[iTrackMax],
-                                        cname ? cname : "",
-                                        255);
+                                strncpy(obj->out->tracks->class_name[iTrackMax], cname ? cname : "", 255);
                                 obj->out->tracks->class_name[iTrackMax][255] = '\0';
                                 obj->out->tracks->class_conf[iTrackMax] = obj->last_class_conf[iTrackMax];
                             } else {
@@ -2130,7 +2215,9 @@ static void classify_track_hop(mod_sst_obj *obj, unsigned int iTrack,
         cfg->enable_classifier_output = 0;  // Default: disabled
         cfg->classifier_log_dir = NULL;     // Will be set from config
         cfg->sim_mode = 0;                  /* Default: Pi/edge mode — no .bin sidecars */
-        cfg->min_event_votes = 4;           /* Default: 4/6 hops must agree to emit event */
+        cfg->min_event_votes = 5;           /* Default: five qualifying target hops */
+        cfg->n_target_thresholds = 0;
+        cfg->target_thresholds = NULL;
         cfg->sstParametersPath[0] = '\0';
 
         return cfg;
@@ -2154,6 +2241,7 @@ static void classify_track_hop(mod_sst_obj *obj, unsigned int iTrack,
         if (cfg->classifier_log_dir != NULL) {
             free((void *) cfg->classifier_log_dir);
         }
+        free((void *) cfg->target_thresholds);
 
         free((void *) cfg);
 
@@ -2579,7 +2667,7 @@ static sst_event_t compute_event(const mod_sst_obj *obj, unsigned int iTrack) {
      * For each candidate class: count distinct hops it appeared in (hop_votes)
      * and average its confidence across all (hop, rank) appearances.
      * Winner = highest hop_votes; tie-break = highest avg_confidence.
-     * hop_votes keeps the 0–ROLLING_HOPS range so min_event_votes stays sane.
+     * hop_votes is the number of distinct hops in which the class appeared.
      * ----------------------------------------------------------------------- */
     int   best_id        = -1;
     int   best_hop_votes = 0;
@@ -2628,6 +2716,47 @@ static sst_event_t compute_event(const mod_sst_obj *obj, unsigned int iTrack) {
     return ev;
 }
 
+static int mod_sst_track_alarm(mod_sst_obj *obj,
+                               unsigned int iTrack,
+                               sst_alarm_result_t *result) {
+    const char *class_names[ROLLING_HOPS];
+    char name_storage[ROLLING_HOPS][256];
+    float confidences[ROLLING_HOPS];
+    int n = obj->topk_count[iTrack];
+    int start;
+    int h;
+
+    if (obj->n_target_thresholds == 0 || n == 0 || obj->yamnet == NULL) {
+        memset(result, 0, sizeof(*result));
+        return 0;
+    }
+
+    start = (obj->topk_head[iTrack] + ROLLING_HOPS - n) % ROLLING_HOPS;
+    for (h = 0; h < n; h++) {
+        int hop_idx = (start + h) % ROLLING_HOPS;
+        const topk_hop_t *hop = &obj->topk_history[iTrack][hop_idx];
+        int class_id = hop->class_ids[0];
+        const char *class_name = class_id >= 0
+                                 ? yamnet_class_name_from_id(obj->yamnet, class_id)
+                                 : NULL;
+
+        if (class_name == NULL) {
+            class_names[h] = NULL;
+            confidences[h] = 0.0f;
+            continue;
+        }
+        snprintf(name_storage[h], sizeof(name_storage[h]), "%s", class_name);
+        class_names[h] = name_storage[h];
+        confidences[h] = hop->confidences[0];
+    }
+
+    return sst_evaluate_target_alarm(class_names, confidences, (unsigned int) n,
+                                     obj->target_thresholds,
+                                     obj->n_target_thresholds,
+                                     (unsigned int) obj->min_event_votes,
+                                     result);
+}
+
 
 void dump_track_buffers_to_json(mod_sst_obj *obj, const char *basename, unsigned int nFramesPerTrack) {
     ensure_log_dir_exists(obj->classifier_log_dir);
@@ -2647,10 +2776,7 @@ void dump_track_buffers_to_json(mod_sst_obj *obj, const char *basename, unsigned
     for (unsigned int i = 0; i < obj->nTracksMax; i++) {
         if (obj->ids[i] == 0 || obj->trackSpectra[i].buffer == NULL) continue;
 
-        /* Always emit position/activity so the simulator can draw tracks.
-         * Event fields are added only when the rolling buffer is full AND
-         * votes >= min_event_votes.  Frames without an event still appear
-         * in the JSON so tracking visualisation works normally. */
+        /* Preserve raw classifier diagnostics; target alarms are reported separately. */
 
         json_object *track_obj = json_object_new_object();
         json_object_object_add(track_obj, "id",  json_object_new_int64(obj->ids[i]));
@@ -2666,13 +2792,25 @@ void dump_track_buffers_to_json(mod_sst_obj *obj, const char *basename, unsigned
         json_object_object_add(track_obj, "frame_count", json_object_new_int(obj->trackSpectra[i].hop_age));
         json_object_object_add(track_obj, "spectral_count", json_object_new_int(obj->trackSpectra[i].count));
 
-        /* Event gate — emit event fields once the track has at least one
-         * classification (topk_count >= 1).  We do NOT require a full buffer
-         * of ROLLING_HOPS because the base YAMNet model may not agree across
-         * hops for unseen classes; that is exactly why we are collecting data.
-         * min_event_votes is still checked so the JSON label reflects the
-         * most-agreed class, but with min_event_votes=1 every hop qualifies.
-         * The Python curator assigns the correct label from ground truth. */
+        sst_alarm_result_t alarm = {0};
+        int alarm_status = mod_sst_track_alarm(obj, i, &alarm);
+        if (alarm_status < 0) {
+            fprintf(stderr, "SST: failed to evaluate target alarm for track %llu\n",
+                    obj->ids[i]);
+        }
+        json_object_object_add(track_obj, "target_alarm",
+            json_object_new_boolean(alarm_status > 0 && alarm.triggered));
+        json_object_object_add(track_obj, "alarm_class_name",
+            json_object_new_string(alarm.triggered ? alarm.class_name : ""));
+        json_object_object_add(track_obj, "alarm_votes",
+            json_object_new_int(alarm.triggered ? alarm.votes : 0));
+        json_object_object_add(track_obj, "alarm_avg_confidence",
+            json_object_new_double(alarm.triggered ? alarm.avg_confidence : 0.0));
+        json_object_object_add(track_obj, "alarm_min_confidence",
+            json_object_new_double(alarm.triggered ? alarm.min_confidence : 0.0));
+
+        /* Raw event diagnostics are emitted when any classification exists;
+         * the target alarm gate above does not alter this training data. */
         int has_event = 0;
         sst_event_t ev = {-1, 0, 0.0f, 0.0f};
         if (obj->topk_count[i] >= 1) {
@@ -3030,4 +3168,3 @@ void dump_track_fingerprint_only(mod_sst_obj *obj,
 
     fclose(fp);
 }
-

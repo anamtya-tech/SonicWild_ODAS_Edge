@@ -285,6 +285,9 @@ enable_testing()
 add_executable(test_ssl_bandpass EXCLUDE_FROM_ALL tests/test_ssl_bandpass.c)
 target_link_libraries(test_ssl_bandpass odas)
 add_test(NAME ssl_bandpass COMMAND test_ssl_bandpass)
+add_executable(test_sst_target_alarm EXCLUDE_FROM_ALL tests/test_sst_target_alarm.c)
+target_link_libraries(test_sst_target_alarm odas)
+add_test(NAME sst_target_alarm COMMAND test_sst_target_alarm)
 
 
 
